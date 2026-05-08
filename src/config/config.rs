@@ -3,16 +3,18 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ProxyConfig {
     pub port: i64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
     pub api_key: String,
-    pub current_model: String,
-    pub proxy: ProxyConfig,
+
+    pub current_model: Option<String>,
+
+    pub proxy: Option<ProxyConfig>,
 }
 
 impl AppConfig {

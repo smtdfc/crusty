@@ -1,8 +1,8 @@
 use crate::{
     agent::{agent::create_chat_agent, message::ChatMessage},
-    config::{self, config::AppConfig},
+    config::config::AppConfig,
     helpers::{
-        _9router::{ensure_9router_install, ensure_9router_run, is_9router_install},
+        _9router::{ensure_9router_run, is_9router_install},
         tui::{print_banner, show_loading},
     },
 };
@@ -10,7 +10,6 @@ use clap::Subcommand;
 use console::{Term, style};
 use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
-use sysinfo::Cpu;
 
 #[derive(Subcommand)]
 pub enum ChatCommands {
@@ -31,7 +30,7 @@ pub async fn handle_chat_start() {
     if !is_9router_install() {
         print!(
             "{} ",
-            style("9Router not install. Please run crusty setup to setup 9router.")
+            style("9Router is not install. Please run crusty setup to setup 9router.")
                 .red()
                 .bold()
         );
@@ -39,11 +38,39 @@ pub async fn handle_chat_start() {
         return;
     }
 
-    ensure_9router_run(config.proxy.port);
+    let Some(proxy_config) = config.proxy else {
+        print!(
+            "{} ",
+            style("9Router is not setup. Please run crusty setup to setup 9router.")
+                .red()
+                .bold()
+        );
+
+        return;
+    };
+
+    match ensure_9router_run(proxy_config.port) {
+        Ok(()) => {}
+
+        Err(s) => {
+            print!("{} ", style(s).red().bold());
+        }
+    };
 
     let theme = ColorfulTheme::default();
     let term = Term::stdout();
-    let mut agent = create_chat_agent(config.proxy.port, config.api_key, config.current_model);
+
+    let Some(model_name) = config.current_model else {
+        print!(
+            "{} ",
+            style("No model select. Please select a model to start chat.")
+                .red()
+                .bold()
+        );
+        return;
+    };
+
+    let mut agent = create_chat_agent(proxy_config.port, config.api_key, model_name);
     term.clear_screen().unwrap();
 
     print_banner();

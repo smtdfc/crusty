@@ -1,4 +1,4 @@
-use crate::helpers::command::NPM_CMD;
+use crate::helpers::process::NPM_CMD;
 use std::process::Command;
 use tracing::error;
 

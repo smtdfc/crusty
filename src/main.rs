@@ -1,11 +1,8 @@
 use clap::Parser;
-use coding_agent::{
-    cli::{
-        chat::{ChatCommands, handle_chat_start},
-        setup::handle_setup,
-    },
-    logging::setup_logging,
-};
+use crusty::cli::chat::handle_chat_start;
+use crusty::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
+use crusty::cli::setup::handle_setup;
+use crusty::{cli::chat::ChatCommands, logging::setup_logging};
 
 #[derive(Parser)]
 struct Cli {
@@ -18,6 +15,11 @@ enum Commands {
     Chat {
         #[command(subcommand)]
         sub: ChatCommands,
+    },
+
+    Proxy {
+        #[command(subcommand)]
+        sub: ProxyCommands,
     },
 
     Setup,
@@ -36,6 +38,18 @@ async fn main() {
             ChatCommands::Start {} => {
                 handle_chat_start().await;
             }
+        },
+
+        Commands::Proxy { sub } => match sub {
+            ProxyCommands::Start {} => {
+                handle_proxy_start();
+            }
+
+            ProxyCommands::Stop {} => {
+                handle_proxy_stop();
+            }
+
+            ProxyCommands::Dashboard {} => {}
         },
     }
 }

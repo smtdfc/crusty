@@ -25,7 +25,7 @@ pub fn handle_setup() {
     let config_data = serde_json::json!({
         "api_key": "",
         "proxy":{
-            "port": port
+            "port": port.parse::<i64>().expect("Unable to create config file!")
         }
     });
 
