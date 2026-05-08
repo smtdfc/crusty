@@ -1,0 +1,21 @@
+[package]
+name = "crusty_agent"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.6.1", features = ["derive"] }
+dialoguer = "0.12.0"
+console = "0.15"
+indicatif = "0.17"
+futures-util = "0.3.32"
+reqwest = { version = "0.11", features = ["json"] }
+rig-core = "0.36.0"
+sysinfo = "0.38.4"
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+directories = "5.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
