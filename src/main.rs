@@ -3,7 +3,7 @@ use crusty::cli::chat::handle_chat_start;
 use crusty::cli::config::handle_config;
 use crusty::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
 use crusty::cli::setup::handle_setup;
-use crusty::{cli::chat::ChatCommands, logging::setup_logging};
+use crusty::logging::setup_logging;
 
 #[derive(Parser)]
 struct Cli {
