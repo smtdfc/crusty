@@ -13,10 +13,7 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
-    Chat {
-        #[command(subcommand)]
-        sub: ChatCommands,
-    },
+    Chat,
 
     Proxy {
         #[command(subcommand)]
@@ -41,11 +38,9 @@ async fn main() {
             handle_config();
         }
 
-        Commands::Chat { sub } => match sub {
-            ChatCommands::Start {} => {
-                handle_chat_start().await;
-            }
-        },
+        Commands::Chat {} => {
+            handle_chat_start().await;
+        }
 
         Commands::Proxy { sub } => match sub {
             ProxyCommands::Start {} => {

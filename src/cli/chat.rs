@@ -8,11 +8,6 @@ use console::{Term, style};
 use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
 
-#[derive(Subcommand)]
-pub enum ChatCommands {
-    Start {},
-}
-
 pub async fn handle_chat_start() {
     show_loading("Preparing ...");
     let Some((current_proxy, proxy_config, proxy)) = get_active_proxy("start") else {

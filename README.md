@@ -42,13 +42,13 @@ cargo run -- proxy start
 # Or: crusty proxy start
 ```
 
-### 3. Start Chatting (`chat start`)
+### 3. Start Chatting
 
 After the setup is complete, you can start the agent using the command:
 
 ```bash
-cargo run -- chat start
-# Or: crusty chat start
+cargo run -- chat
+# Or: crusty chat
 ```
 
 **This command will:**
