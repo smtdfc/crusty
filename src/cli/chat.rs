@@ -1,8 +1,7 @@
 use crate::{
     agent::{agent::create_chat_agent, message::ChatMessage},
-    ai_proxy::ai_proxy::{AIProxy, get_proxy},
-    config::config::AppConfig,
-    helpers::tui::{print_banner, show_loading},
+    cli::utils::get_active_proxy,
+    helpers::tui::{print_banner, print_error, show_loading},
 };
 use clap::Subcommand;
 use console::{Term, style};
@@ -16,62 +15,7 @@ pub enum ChatCommands {
 
 pub async fn handle_chat_start() {
     show_loading("Preparing ...");
-    let config = match AppConfig::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            eprintln!("{} {}", style("Error:").red().bold(), e);
-
-            return;
-        }
-    };
-
-    let Some(current_proxy) = &config.current_proxy else {
-        eprintln!(
-            "{} {}",
-            style("Error:").red().bold(),
-            "No proxy select. Please setup first."
-        );
-        return;
-    };
-
-    let Some(proxy_config) = config.find_proxy_by_id(current_proxy) else {
-        eprintln!(
-            "{} {}",
-            style("Error:").red().bold(),
-            "No proxy found. Please setup first."
-        );
-        return;
-    };
-
-    if !proxy_config.is_local {
-        eprintln!(
-            "{} {}",
-            style("Error:").red().bold(),
-            format!(
-                "Proxy {} (platform {}) is remote proxy from another address cannot start locally",
-                current_proxy, proxy_config.platform
-            )
-        );
-    }
-
-    let Some(proxy) = get_proxy(&proxy_config.platform, &proxy_config) else {
-        eprintln!(
-            "{} {}",
-            style("Error:").red().bold(),
-            "Failed to init proxy. Please check logs for details."
-        );
-        return;
-    };
-
-    if !proxy.is_install() {
-        eprintln!(
-            "{} {}",
-            style("Error:").red().bold(),
-            format!(
-                "Platform {} (for {}) not install. Please run crusty setup first.",
-                proxy_config.platform, current_proxy
-            )
-        );
+    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy("start") else {
         return;
     };
 
@@ -80,17 +24,12 @@ pub async fn handle_chat_start() {
     let term = Term::stdout();
 
     let Some(model_name) = proxy_config.current_model.clone() else {
-        print!(
-            "{} ",
-            style("No model select. Please select a model to start chat.")
-                .red()
-                .bold()
-        );
+        print_error("No model select. Please select a model to start chat.");
         return;
     };
     print_banner(
         &model_name,
-        current_proxy,
+        &current_proxy,
         &proxy_config.platform,
         &proxy_config.host,
         proxy_config.port,

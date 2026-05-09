@@ -42,7 +42,7 @@ pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, S
     match command.spawn() {
         Ok(child) => {
             let pid = child.id();
-            save_pid(key, pid);
+            let _ = save_pid(key, pid);
             Ok(pid)
         }
         Err(e) => {

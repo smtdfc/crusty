@@ -5,12 +5,12 @@ use dialoguer::{Confirm, Input, theme::ColorfulTheme};
 use crate::{
     ai_proxy::{_9router::_9RouterAIProxy, ai_proxy::AIProxy},
     config::{ai_proxy::AIProxyConfig, config::AppConfig},
-    helpers::tui::show_menu,
+    helpers::tui::{print_error, print_info, print_success, show_menu},
 };
 
 fn setup_9router() -> AIProxyConfig {
     let theme = ColorfulTheme::default();
-    let mut port: u64 = 3000;
+    let port: u64;
     let mut host = format!("localhost");
     let is_local: bool = Confirm::with_theme(&theme)
         .with_prompt("Use 9router locally?")
@@ -32,18 +32,18 @@ fn setup_9router() -> AIProxyConfig {
 
     let proxy = _9RouterAIProxy { port };
     if !proxy.is_install() {
-        println!("Installing 9router ...");
-        proxy.install();
+        print_info("Installing 9router ...");
+        let _ = proxy.install();
     }
 
-    println!(
+    print_info(&format!(
         "Please follow the steps below to complete the setup:
             if your proxy run locally, please run crusty proxy start to start the proxy.
             Open: http://{}:{}/dashboard/combos in your browser (Log in if prompted)
             Add a combo box named crusty_combo so that crusty can function.
         ",
         host, port
-    );
+    ));
 
     AIProxyConfig {
         platform: format!("9router"),
@@ -79,11 +79,11 @@ pub fn handle_setup() {
 
     match config.save() {
         Ok(()) => {
-            println!("✅ Saved! Crusty Agent is now available.");
+            print_success("Saved! Crusty Agent is now available.");
         }
 
         Err(e) => {
-            println!("Error {}", e);
+            print_error(&format!("Error {}", e));
         }
     }
 }

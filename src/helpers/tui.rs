@@ -1,6 +1,22 @@
-use console::{Emoji, style};
+use console::style;
 use dialoguer::{Select, theme::ColorfulTheme};
 use indicatif::{ProgressBar, ProgressStyle};
+
+pub fn print_error(msg: &str) {
+    eprintln!("{} {}", style("Error:").red().bold(), msg);
+}
+
+pub fn print_info(msg: &str) {
+    println!("{} {}", style("Info:").blue().bold(), msg);
+}
+
+pub fn print_success(msg: &str) {
+    println!("{} {}", style("Success:").green().bold(), msg);
+}
+
+pub fn print_warning(msg: &str) {
+    println!("{} {}", style("Warning:").yellow().bold(), msg);
+}
 
 pub fn show_loading(text: &str) -> ProgressBar {
     let pb = ProgressBar::new_spinner();
@@ -16,6 +32,8 @@ pub fn show_loading(text: &str) -> ProgressBar {
     return pb;
 }
 
+use console::{pad_str, Alignment};
+
 pub fn print_banner(
     model_name: &str,
     proxy_name: &str,
@@ -27,47 +45,33 @@ pub fn print_banner(
     let term = console::Term::stdout();
     let _ = term.clear_screen();
 
-    let width = 50;
-    let line = "─".repeat(width);
+    let proxy_status = if is_proxy_online {
+        style("running").green().to_string()
+    } else {
+        style("offline").red().blink().to_string()
+    };
+
+    let w = 54;
+    let line = "─".repeat(w);
 
     println!("{}", style(format!("┌{}┐", line)).dim());
 
-    println!(
-        "{}  {}  {:<width$}  {}",
-        style("│").dim(),
-        style("●").cyan(),
-        style("CRUSTY AGENT v0.1.0").bold(),
-        style("│").dim()
-    );
+    let header = format!(" {} {}", style("●").cyan(), style("CRUSTY AGENT v0.1.0").bold());
+    println!("{} {} {}", style("│").dim(), pad_str(&header, w, Alignment::Left, None), style("│").dim());
 
-    println!(
-        "{}  {:<width$}  {}",
-        style("│").dim(),
-        style("─".repeat(width)).dim(),
-        style("│").dim()
-    );
+    println!("{}", style(format!("├{}┤", line)).dim());
 
-    let proxy_status = if is_proxy_online {
-        style("running").green()
-    } else {
-        style("offline").red().blink()
-    };
+    let model_line = format!(" Model   : {}", style(model_name).yellow());
+    println!("{} {} {}", style("│").dim(), pad_str(&model_line, w, Alignment::Left, None), style("│").dim());
 
-    println!(
-        "{}  {:<width$}  {}",
-        style("│").dim(),
-        format!(
-            "Proxy: {} (Platform: {} Status: {} | Address: {}:{})",
-            proxy_name, proxy_platform, proxy_status, host, port
-        ),
-        style("│").dim()
-    );
-    println!(
-        "{}  {:<width$}  {}",
-        style("│").dim(),
-        style(format!("Model: {}", model_name)).yellow(),
-        style("│").dim()
-    );
+    let proxy_line = format!(" Proxy   : {} ({})", proxy_name, proxy_platform);
+    println!("{} {} {}", style("│").dim(), pad_str(&proxy_line, w, Alignment::Left, None), style("│").dim());
+
+    let address_line = format!(" Address : {}:{}", host, port);
+    println!("{} {} {}", style("│").dim(), pad_str(&address_line, w, Alignment::Left, None), style("│").dim());
+
+    let status_line = format!(" Status  : {}", proxy_status);
+    println!("{} {} {}", style("│").dim(), pad_str(&status_line, w, Alignment::Left, None), style("│").dim());
 
     println!("{}", style(format!("└{}┘", line)).dim());
     println!();
