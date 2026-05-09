@@ -1,20 +1,15 @@
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct ProxyConfig {
-    pub port: i64,
-}
+use crate::config::ai_proxy::AIProxyConfig;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
-    pub api_key: String,
-
-    pub current_model: Option<String>,
-
-    pub proxy: Option<ProxyConfig>,
+    pub current_proxy: Option<String>,
+    pub ai_proxies: HashMap<String, AIProxyConfig>,
 }
 
 impl AppConfig {
@@ -32,6 +27,19 @@ impl AppConfig {
 
         Ok(config)
     }
+
+    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let config_path = Self::get_config_path();
+        let config_str = serde_json::to_string_pretty(self)?;
+        let config_dir = Self::get_config_dir();
+        if !config_dir.exists() {
+            fs::create_dir_all(config_dir)?;
+        }
+        fs::write(config_path, config_str)?;
+
+        Ok(())
+    }
+
     pub fn get_config_dir() -> PathBuf {
         let proj_dirs = ProjectDirs::from("io", "smtdfc", "crusty")
             .expect("The system configuration directory cannot be determined!");
@@ -46,5 +54,9 @@ impl AppConfig {
 
     pub fn get_config_path() -> PathBuf {
         Self::get_config_dir().join("config.json")
+    }
+
+    pub fn find_proxy_by_id(&self, name: &String) -> Option<AIProxyConfig> {
+        self.ai_proxies.get(name).cloned()
     }
 }

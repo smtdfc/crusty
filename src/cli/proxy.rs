@@ -2,11 +2,9 @@ use clap::Subcommand;
 use console::style;
 
 use crate::{
+    ai_proxy::ai_proxy::{AIProxy, get_proxy},
     config::config::AppConfig,
-    helpers::{
-        _9router::{ensure_9router_run, is_9router_install, stop_9router},
-        tui::show_loading,
-    },
+    helpers::tui::show_loading,
 };
 
 #[derive(Subcommand)]
@@ -27,35 +25,90 @@ pub fn handle_proxy_start() {
         }
     };
 
-    if !is_9router_install() {
+    let Some(current_proxy) = &config.current_proxy else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy select. Please setup first."
+        );
         return;
+    };
+
+    let Some(proxy_config) = config.find_proxy_by_id(current_proxy) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy found. Please setup first."
+        );
+        return;
+    };
+
+    if !proxy_config.is_local {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            format!(
+                "Proxy {} (platform: {}) is remote proxy from another address cannot start locally",
+                current_proxy, proxy_config.platform
+            )
+        );
     }
 
-    let Some(proxy_config) = config.proxy else {
-        print!(
-            "{} ",
-            style("9Router is not setup. Please run crusty setup to setup 9router.")
-                .red()
-                .bold()
+    let Some(proxy) = get_proxy(&proxy_config.platform, &proxy_config) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "Failed to init proxy. Please check logs for details."
         );
-
         return;
     };
 
-    match ensure_9router_run(proxy_config.port) {
-        Ok(()) => {
-            print!(
-                "{} ",
-                style(format!("9Router is running in port {}", proxy_config.port))
-                    .green()
-                    .bold()
-            );
-        }
-
-        Err(s) => {
-            print!("{} ", style(s).red().bold());
-        }
+    if !proxy.is_install() {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            format!(
+                "Platform {} (for {}) not install. Please run crusty setup first.",
+                proxy_config.platform, current_proxy
+            )
+        );
+        return;
     };
+
+    if !proxy.is_running() {
+        match proxy.start() {
+            Ok(()) => {
+                println!(
+                    "{} {}",
+                    style("Info:").blue().bold(),
+                    format!(
+                        "Proxy {} (platform: {}) is running on port {}",
+                        current_proxy, proxy_config.platform, proxy_config.port
+                    )
+                )
+            }
+
+            Err(e) => {
+                eprintln!(
+                    "{} {}",
+                    style("Error:").red().bold(),
+                    format!(
+                        "Cannot start proxy {} (platform: {}) on port {}. Please check log for details.",
+                        current_proxy, proxy_config.platform, proxy_config.port
+                    )
+                );
+            }
+        }
+    } else {
+        println!(
+            "{} {}",
+            style("Info:").blue().bold(),
+            format!(
+                "Proxy {} (platform: {}) is running on port {}",
+                current_proxy, proxy_config.platform, proxy_config.port
+            )
+        )
+    }
 }
 
 pub fn handle_proxy_stop() {
@@ -69,31 +122,76 @@ pub fn handle_proxy_stop() {
         }
     };
 
-    if !is_9router_install() {
+    let Some(current_proxy) = &config.current_proxy else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy select. Please setup first."
+        );
         return;
+    };
+
+    let Some(proxy_config) = config.find_proxy_by_id(current_proxy) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy found. Please setup first."
+        );
+        return;
+    };
+
+    if !proxy_config.is_local {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            format!(
+                "Proxy {} (platform: {}) is remote proxy from another address cannot stop locally",
+                current_proxy, proxy_config.platform
+            )
+        );
     }
 
-    let Some(_) = config.proxy else {
-        print!(
-            "{} ",
-            style("9Router is not setup. Please run crusty setup to setup 9router.")
-                .red()
-                .bold()
+    let Some(proxy) = get_proxy(&proxy_config.platform, &proxy_config) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "Failed to init proxy. Please check logs for details."
         );
-
         return;
     };
 
-    match stop_9router() {
-        Ok(()) => {
-            print!(
-                "{} ",
-                style(format!("9Router has been stopped")).green().bold()
-            );
-        }
+    if proxy.is_running() {
+        match proxy.stop() {
+            Ok(()) => {
+                println!(
+                    "{} {}",
+                    style("Info:").blue().bold(),
+                    format!(
+                        "Proxy {} (platform: {}) is stopped",
+                        current_proxy, proxy_config.platform
+                    )
+                )
+            }
 
-        Err(s) => {
-            print!("{} ", style(s).red().bold());
+            Err(e) => {
+                eprintln!(
+                    "{} {}",
+                    style("Error:").red().bold(),
+                    format!(
+                        "Cannot stop proxy {} (platform: {}) on port {}. Please check log for details.",
+                        current_proxy, proxy_config.platform, proxy_config.port
+                    )
+                );
+            }
         }
-    };
+    } else {
+        println!(
+            "{} {}",
+            style("Info:").blue().bold(),
+            format!(
+                "Proxy {} (platform: {}) not run",
+                current_proxy, proxy_config.platform
+            )
+        )
+    }
 }

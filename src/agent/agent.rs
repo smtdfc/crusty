@@ -59,7 +59,7 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
 }
 
 pub fn create_chat_agent(
-    port: i64,
+    port: u64,
     api_key: String,
     model: String,
 ) -> ChatAgent<impl rig::completion::CompletionModel> {

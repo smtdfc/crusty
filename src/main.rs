@@ -1,5 +1,6 @@
 use clap::Parser;
 use crusty::cli::chat::handle_chat_start;
+use crusty::cli::config::handle_config;
 use crusty::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
 use crusty::cli::setup::handle_setup;
 use crusty::{cli::chat::ChatCommands, logging::setup_logging};
@@ -23,6 +24,7 @@ enum Commands {
     },
 
     Setup,
+    Config,
 }
 
 #[tokio::main]
@@ -34,6 +36,11 @@ async fn main() {
         Commands::Setup => {
             handle_setup();
         }
+
+        Commands::Config => {
+            handle_config();
+        }
+
         Commands::Chat { sub } => match sub {
             ChatCommands::Start {} => {
                 handle_chat_start().await;

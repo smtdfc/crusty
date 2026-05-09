@@ -118,7 +118,7 @@ pub fn stop_process(key: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn stop_process_by_port(port: i64) -> Result<(), Box<dyn Error>> {
+pub fn stop_process_by_port(port: u64) -> Result<(), Box<dyn Error>> {
     let mut pids: std::collections::HashSet<u32> = std::collections::HashSet::new();
 
     if cfg!(target_os = "windows") {
@@ -182,7 +182,7 @@ pub fn stop_process_by_port(port: i64) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub fn get_pids_by_port(port: i64) -> Result<Vec<u32>, Box<dyn Error>> {
+pub fn get_pids_by_port(port: u64) -> Result<Vec<u32>, Box<dyn Error>> {
     let mut pids: Vec<u32> = vec![];
 
     if cfg!(target_os = "windows") {

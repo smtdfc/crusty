@@ -1,10 +1,8 @@
 use crate::{
     agent::{agent::create_chat_agent, message::ChatMessage},
+    ai_proxy::ai_proxy::{AIProxy, get_proxy},
     config::config::AppConfig,
-    helpers::{
-        _9router::{ensure_9router_run, is_9router_install},
-        tui::{print_banner, show_loading},
-    },
+    helpers::tui::{print_banner, show_loading},
 };
 use clap::Subcommand;
 use console::{Term, style};
@@ -27,40 +25,61 @@ pub async fn handle_chat_start() {
         }
     };
 
-    if !is_9router_install() {
-        print!(
-            "{} ",
-            style("9Router is not install. Please run crusty setup to setup 9router.")
-                .red()
-                .bold()
+    let Some(current_proxy) = &config.current_proxy else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy select. Please setup first."
         );
-
         return;
+    };
+
+    let Some(proxy_config) = config.find_proxy_by_id(current_proxy) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "No proxy found. Please setup first."
+        );
+        return;
+    };
+
+    if !proxy_config.is_local {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            format!(
+                "Proxy {} (platform {}) is remote proxy from another address cannot start locally",
+                current_proxy, proxy_config.platform
+            )
+        );
     }
 
-    let Some(proxy_config) = config.proxy else {
-        print!(
-            "{} ",
-            style("9Router is not setup. Please run crusty setup to setup 9router.")
-                .red()
-                .bold()
+    let Some(proxy) = get_proxy(&proxy_config.platform, &proxy_config) else {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            "Failed to init proxy. Please check logs for details."
         );
-
         return;
     };
 
-    match ensure_9router_run(proxy_config.port) {
-        Ok(()) => {}
-
-        Err(s) => {
-            print!("{} ", style(s).red().bold());
-        }
+    if !proxy.is_install() {
+        eprintln!(
+            "{} {}",
+            style("Error:").red().bold(),
+            format!(
+                "Platform {} (for {}) not install. Please run crusty setup first.",
+                proxy_config.platform, current_proxy
+            )
+        );
+        return;
     };
 
+    let is_proxy_online = proxy.is_running();
     let theme = ColorfulTheme::default();
     let term = Term::stdout();
 
-    let Some(model_name) = config.current_model else {
+    let Some(model_name) = proxy_config.current_model.clone() else {
         print!(
             "{} ",
             style("No model select. Please select a model to start chat.")
@@ -69,11 +88,19 @@ pub async fn handle_chat_start() {
         );
         return;
     };
+    print_banner(
+        &model_name,
+        current_proxy,
+        &proxy_config.platform,
+        &proxy_config.host,
+        proxy_config.port,
+        is_proxy_online,
+    );
 
-    let mut agent = create_chat_agent(proxy_config.port, config.api_key, model_name);
+    let api_key = proxy_config.api_key.as_deref().unwrap_or("").to_string();
+    let mut agent = create_chat_agent(proxy_config.port, api_key, model_name);
     term.clear_screen().unwrap();
 
-    print_banner();
     loop {
         let input: Result<String, _> = Input::with_theme(&theme).with_prompt("You").interact_text();
 
