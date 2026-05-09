@@ -3,7 +3,6 @@ use crate::{
     cli::utils::get_active_proxy,
     helpers::tui::{print_banner, print_error, show_loading},
 };
-use clap::Subcommand;
 use console::{Term, style};
 use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
@@ -22,6 +21,18 @@ pub async fn handle_chat_start() {
         print_error("No model select. Please select a model to start chat.");
         return;
     };
+
+    if !is_proxy_online {
+        print_error(
+            format!(
+                "Proxy {} (platform: {}) is offline. Please run proxy before.",
+                current_proxy, proxy_config.platform
+            )
+            .as_str(),
+        );
+        return;
+    }
+
     print_banner(
         &model_name,
         &current_proxy,
