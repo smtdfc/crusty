@@ -26,8 +26,6 @@ Crusty is an AI Agent built with Rust that integrates the AI proxy.
 
 ## Usage Instructions
 
-Crusty Agent comes with 2 main commands: `setup` and `chat`.
-
 ### 1. Initial Setup (`setup`)
 
 Before chatting, you need to set up the basic configuration. Run the command:
