@@ -8,8 +8,11 @@ use crate::{
 
 #[derive(Subcommand)]
 pub enum ProxyCommands {
+    /// Start the active AI proxy service
     Start {},
+    /// Stop the currently running AI proxy service
     Stop {},
+    /// Open the AI proxy dashboard in the browser
     Dashboard {},
 }
 

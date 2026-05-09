@@ -63,8 +63,10 @@ pub fn create_chat_agent(
     api_key: String,
     model: String,
 ) -> ChatAgent<impl rig::completion::CompletionModel> {
+    let http_client = reqwest::Client::new();
     let client = openai::Client::builder()
         .api_key(api_key)
+        // .http_client(http_client)
         .base_url(format!("http://localhost:{}/v1", port))
         .build();
 

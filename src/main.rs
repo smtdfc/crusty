@@ -6,6 +6,7 @@ use crusty::cli::setup::handle_setup;
 use crusty::logging::setup_logging;
 
 #[derive(Parser)]
+#[command(name = "crusty", about = "Crusty Agent CLI - AI Proxy & Code Assistant", version)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -13,14 +14,19 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
+    /// Start a new interactive chat session with the AI agent
     Chat,
 
+    /// Manage AI proxies (start, stop, dashboard)
     Proxy {
         #[command(subcommand)]
         sub: ProxyCommands,
     },
 
+    /// Setup a new AI proxy platform (e.g., 9router)
     Setup,
+    
+    /// Configure settings, models, and switch active proxies
     Config,
 }
 
