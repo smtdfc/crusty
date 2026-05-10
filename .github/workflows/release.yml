@@ -19,3 +19,5 @@ jobs:
 
       - name: Run Release-plz
         uses: MarcoIeni/release-plz-action@v0.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_RELEASE_TOKEN }}
