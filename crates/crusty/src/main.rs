@@ -1,12 +1,16 @@
 use clap::Parser;
-use crusty::cli::chat::handle_chat_start;
-use crusty::cli::config::handle_config;
-use crusty::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
-use crusty::cli::setup::handle_setup;
-use crusty::logging::setup_logging;
+use crusty_core::cli::chat::handle_chat_start;
+use crusty_core::cli::config::handle_config;
+use crusty_core::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
+use crusty_core::cli::setup::handle_setup;
+use crusty_core::logging::setup_logging;
 
 #[derive(Parser)]
-#[command(name = "crusty", about = "Crusty Agent CLI - AI Proxy & Code Assistant", version)]
+#[command(
+    name = "crusty",
+    about = "Crusty Agent CLI - AI Proxy & Code Assistant",
+    version
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -25,7 +29,7 @@ enum Commands {
 
     /// Setup a new AI proxy platform (e.g., 9router)
     Setup,
-    
+
     /// Configure settings, models, and switch active proxies
     Config,
 }

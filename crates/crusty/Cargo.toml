@@ -1,12 +1,17 @@
-[workspace]
-resolver = "2"
+[package]
+name = "crusty"
+version = "0.1.0"
+edition = "2024"
 
-members = [
-    "crates/plugin",  
-    "crates/crusty",
-]
+[lib]
+name = "crusty_core"
+path = "src/lib.rs"
 
-[workspace.dependencies]
+[[bin]]
+name = "crusty"
+path = "src/main.rs"
+
+[dependencies]
 clap = { version = "4.6.1", features = ["derive"] }
 dialoguer = "0.12.0"
 console = "0.15"
@@ -23,7 +28,3 @@ directories = "5.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-[workspace.lints.rust]
-unused_variables = "allow"
-dead_code = "allow"
-non_snake_case = "allow"
