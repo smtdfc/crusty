@@ -1,0 +1,32 @@
+name: Multi-Plugin Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-pack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc, aarch64-pc-windows-msvc, x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu
+
+      - name: Install Cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Run Hardcore Build Manager
+        run: python scripts/build_all.py --out ./dist --cross
+
+      - name: Upload Finished Plugins
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-plugins-dist
+          path: dist/
