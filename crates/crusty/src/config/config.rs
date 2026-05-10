@@ -5,11 +5,13 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::config::ai_proxy::AIProxyConfig;
+use crate::config::plugin::PluginConfig;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
     pub current_proxy: Option<String>,
     pub ai_proxies: HashMap<String, AIProxyConfig>,
+    pub plugins: Vec<PluginConfig>,
 }
 
 impl AppConfig {
@@ -50,6 +52,18 @@ impl AppConfig {
         }
 
         config_dir.to_path_buf()
+    }
+
+    pub fn get_data_dir() -> PathBuf {
+        let proj_dirs = ProjectDirs::from("io", "smtdfc", "crusty")
+            .expect("The system configuration directory cannot be determined!");
+
+        let data_dir = proj_dirs.data_dir();
+        if !data_dir.exists() {
+            fs::create_dir_all(data_dir).ok();
+        }
+
+        data_dir.to_path_buf()
     }
 
     pub fn get_config_path() -> PathBuf {

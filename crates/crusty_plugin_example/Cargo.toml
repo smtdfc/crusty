@@ -1,0 +1,14 @@
+[package]
+name = "crusty_plugin_example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+abi_stable = "0.11.3"
+crusty_plugin = { version = "0.1.0", path = "../plugin" }
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib"]

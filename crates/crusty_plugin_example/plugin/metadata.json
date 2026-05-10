@@ -1,0 +1,11 @@
+{
+    "id": "@crusty/plugin_example",
+    "name": "Crusty plugin example",
+    "platforms": [
+        {
+            "os": "windows",
+            "arch": "x86_64",
+            "file": "crusty_plugin_example.dll"
+        }
+    ]
+}

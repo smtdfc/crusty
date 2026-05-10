@@ -5,7 +5,7 @@ release_always = true
  
 members = [
     "crates/plugin",  
-    "crates/crusty",
+    "crates/crusty", "crates/crusty_plugin_example",
 ]
 
 [workspace.dependencies]

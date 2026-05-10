@@ -69,6 +69,7 @@ pub fn handle_setup() {
     let mut config = AppConfig {
         current_proxy: None,
         ai_proxies: HashMap::new(),
+        plugins: vec![],
     };
 
     if select == 0 {

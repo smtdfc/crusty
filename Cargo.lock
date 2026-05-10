@@ -432,8 +432,10 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 name = "crusty"
 version = "0.1.1"
 dependencies = [
+ "abi_stable",
  "clap",
  "console 0.15.11",
+ "crusty_plugin",
  "dialoguer",
  "directories",
  "futures-util",
@@ -454,6 +456,14 @@ name = "crusty_plugin"
 version = "0.1.0"
 dependencies = [
  "abi_stable",
+]
+
+[[package]]
+name = "crusty_plugin_example"
+version = "0.1.0"
+dependencies = [
+ "abi_stable",
+ "crusty_plugin",
 ]
 
 [[package]]
