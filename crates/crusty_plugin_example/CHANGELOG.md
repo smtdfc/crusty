@@ -7,14 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.2](https://github.com/smtdfc/crusty/compare/crusty-v0.1.1...crusty-v0.1.2) - 2026-05-10
+## [0.1.0](https://github.com/smtdfc/crusty/releases/tag/crusty_plugin_example-v0.1.0) - 2026-05-10
 
 ### Added
 
 - implement plugin system with installation and metadata handling
-
-## [0.1.1](https://github.com/smtdfc/crusty/compare/crusty-v0.1.0...crusty-v0.1.1) - 2026-05-10
-
-### Other
-
-- Refactor Crusty Agent: Restructure project into crates, implement AI proxy functionality, and enhance CLI commands
