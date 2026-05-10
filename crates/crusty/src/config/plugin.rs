@@ -5,4 +5,5 @@ pub struct PluginConfig {
     pub name: String,
     pub id: String,
     pub file: String,
+    pub features: Option<Vec<String>>,
 }

@@ -1,8 +1,8 @@
 use clap::Subcommand;
 
-
 use crate::{
     cli::utils::get_active_proxy,
+    config::config::AppConfig,
     helpers::tui::{print_error, print_info, show_loading},
 };
 
@@ -18,7 +18,14 @@ pub enum ProxyCommands {
 
 pub fn handle_proxy_start() {
     show_loading("Preparing ...");
-    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy("start") else {
+    let config = match AppConfig::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            print_error(&format!("{}", e));
+            return;
+        }
+    };
+    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "start") else {
         return;
     };
 
@@ -48,7 +55,14 @@ pub fn handle_proxy_start() {
 
 pub fn handle_proxy_stop() {
     show_loading("Preparing ...");
-    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy("stop") else {
+    let config = match AppConfig::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            print_error(&format!("{}", e));
+            return;
+        }
+    };
+    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "stop") else {
         return;
     };
 

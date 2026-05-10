@@ -16,6 +16,7 @@ pub struct PluginMetadata {
     pub id: String,
     pub version: Option<String>,
     pub platforms: Vec<PlatformInfo>,
+    pub features: Option<Vec<String>>,
 }
 
 impl PluginMetadata {

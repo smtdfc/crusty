@@ -1,7 +1,7 @@
 use abi_stable::export_root_module;
 use abi_stable::prefix_type::PrefixTypeTrait;
 use abi_stable::std_types::RString;
-use crusty_plugin::plugin::START_SERVICE;
+use crusty_plugin::bridge::ChatCallback;
 use crusty_plugin::{
     bridge::{ControlCallback, Plugin, PluginRef},
     plugin::PluginInfo,
@@ -11,9 +11,16 @@ use crusty_plugin::{
 fn get_library() -> PluginRef {
     Plugin {
         get_info,
-        start_service,
+        start_service: Some(start_service),
+        init_chat: Some(init_chat),
+        handle_chat_respond: None,
     }
     .leak_into_prefix()
+}
+
+extern "C" fn init_chat(f: ChatCallback) -> RString {
+    println!("Plugin init");
+    return "1".into();
 }
 
 extern "C" fn get_info() -> PluginInfo {
@@ -22,7 +29,6 @@ extern "C" fn get_info() -> PluginInfo {
         author: "crusty_plugin_example".into(),
         version: "crusty_plugin_example".into(),
         description: "crusty_plugin_example".into(),
-        capabilities: vec![START_SERVICE].into(),
     }
 }
 

@@ -4,16 +4,11 @@ use crate::{
     helpers::tui::print_error,
 };
 
-pub fn get_active_proxy(action: &str) -> Option<(String, AIProxyConfig, Box<dyn AIProxy>)> {
-    let config = match AppConfig::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            print_error(&format!("{}", e));
-            return None;
-        }
-    };
-
-    let Some(current_proxy) = config.current_proxy else {
+pub fn get_active_proxy(
+    config: &AppConfig,
+    action: &str,
+) -> Option<(String, AIProxyConfig, Box<dyn AIProxy>)> {
+    let Some(current_proxy) = config.current_proxy.clone() else {
         print_error("No proxy select. Please setup first.");
         return None;
     };

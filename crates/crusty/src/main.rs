@@ -4,6 +4,7 @@ use crusty_core::cli::config::handle_config;
 use crusty_core::cli::plugin::{PluginCommands, handle_plugin_install};
 use crusty_core::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
 use crusty_core::cli::setup::handle_setup;
+use crusty_core::cli::start::handle_start;
 use crusty_core::logging::setup_logging;
 
 #[derive(Parser)]
@@ -38,6 +39,8 @@ enum Commands {
 
     /// Configure settings, models, and switch active proxies
     Config,
+
+    Start,
 }
 
 #[tokio::main]
@@ -54,8 +57,12 @@ async fn main() {
             handle_config();
         }
 
+        Commands::Start => {
+            handle_start().await;
+        }
+
         Commands::Chat {} => {
-            handle_chat_start().await;
+            handle_chat_start(true).await;
         }
 
         Commands::Proxy { sub } => match sub {

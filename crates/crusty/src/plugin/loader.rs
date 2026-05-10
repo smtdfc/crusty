@@ -8,13 +8,12 @@ use std::{
 
 use crate::{
     config::{config::AppConfig, plugin::PluginConfig},
-    helpers::fs::{copy_dir_all, is_it_really_a_file},
+    helpers::fs::copy_dir_all,
     plugin::metadata::read_metadata,
 };
 
 pub fn load_plugin(path: &Path) -> PluginRef {
-    let plugin = PluginRef::load_from_directory(path.parent().unwrap())
-        .expect("Cannot load plugin! Looks like there's a layout or version mismatch");
+    let plugin = PluginRef::load_from_file(path).expect("Cannot load plugin file!");
 
     plugin
 }
@@ -32,7 +31,15 @@ pub fn install_plugin(
     }
 
     let metadata = read_metadata(&metadata_file)?;
-    dest_path.push(&metadata.id);
+    let id = &metadata.id;
+    let parts: Vec<&str> = id.split('/').collect();
+    for part in parts {
+        dest_path.push(part);
+    }
+    if let Err(e) = std::fs::create_dir_all(&dest_path) {
+        eprintln!("Error: {}", e);
+    }
+
     let binary_rel_path = metadata.find_compatible_binary().ok_or_else(|| {
         format!(
             "The '{}' plugin is not supported on this operating system or architecture! ",
@@ -48,6 +55,7 @@ pub fn install_plugin(
         )
         .into());
     }
+    let binary_dest_path = dest_path.join(binary_rel_path);
 
     if dest_path.exists() {
         fs::remove_dir_all(&dest_path)?;
@@ -56,10 +64,11 @@ pub fn install_plugin(
     config.plugins.push(PluginConfig {
         name: metadata.name,
         id: metadata.id,
-        file: dest_path
+        file: binary_dest_path
             .to_str()
             .expect("Path not is UTF-8 format")
             .to_string(),
+        features: metadata.features,
     });
 
     copy_dir_all(&base, &dest_path)?;
