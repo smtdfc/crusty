@@ -32,7 +32,7 @@ def build_targets(use_cross=False):
     for target, _, _ in TARGET_MAP:
         print(f"Compiling {target}...")
         if not use_cross:
-            subprocess.run(["rustup", "target", "add", target], check=False)
+            subprocess.run(["rustup", "target", "add", target], check=True)
 
         cmd = [compiler, "build", "--release", "--target", target]
         try:
