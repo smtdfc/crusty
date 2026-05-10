@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
-
+publish = false
+release_always = true
+ 
 members = [
     "crates/plugin",  
     "crates/crusty",
@@ -27,3 +29,4 @@ serde_json = "1.0"
 unused_variables = "allow"
 dead_code = "allow"
 non_snake_case = "allow"
+
