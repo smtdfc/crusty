@@ -1,0 +1,11 @@
+[workspace]
+publish = false        
+release_always = true 
+
+[[package]]
+name = "crusty"
+publish = false
+
+[[package]]
+name = "crusty_plugin"
+publish = false
