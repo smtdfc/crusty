@@ -1,22 +1,22 @@
-use crate::helpers::process::NPM_CMD;
+use crate::{exceptions::crusty::CrustyError, helpers::process::NPM_CMD};
 use std::process::Command;
 use tracing::error;
 
-pub fn check_npm_package(package_name: &str) -> bool {
+pub fn check_npm_package(package_name: &str) -> Result<bool, CrustyError> {
     let output = Command::new(NPM_CMD)
         .args(["list", package_name, "--depth=0", "--json"])
         .output();
 
     match output {
-        Ok(out) => out.status.success(),
+        Ok(out) => Ok(out.status.success()),
         Err(e) => {
             error!("Error when check package {} with NPM: {}", package_name, e);
-            false
+            Err(CrustyError::PackageError(format!("{}", e)))
         }
     }
 }
 
-pub fn install_npm_package(package_name: &str, global: bool) -> bool {
+pub fn install_npm_package(package_name: &str, global: bool) -> Result<bool, CrustyError> {
     let mut args = vec!["install", package_name];
 
     if global {
@@ -28,14 +28,14 @@ pub fn install_npm_package(package_name: &str, global: bool) -> bool {
         .status();
 
     match output {
-        Ok(status) => status.success(),
+        Ok(status) => Ok(status.success()),
         Err(e) => {
             error!(
                 "Error when install package {} with NPM: {}",
                 package_name, e
             );
 
-            false
+            Err(CrustyError::PackageError(format!("{}", e)))
         }
     }
 }

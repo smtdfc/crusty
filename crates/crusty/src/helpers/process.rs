@@ -3,12 +3,15 @@ use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};
 use sysinfo::{Pid, ProcessesToUpdate, System};
 use tracing::error;
+#[cfg(target_os = "windows")]
+use tracing::trace;
 
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
 use crate::config::config::AppConfig;
+#[cfg(target_os = "windows")]
+use crate::exceptions::crusty::CrustyError;
 
 pub static NPM_CMD: &str = if cfg!(target_os = "windows") {
     "npm.cmd"
@@ -26,7 +29,7 @@ pub static NPX_CMD: &str = if cfg!(target_os = "windows") {
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[cfg(target_os = "windows")]
-pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, String> {
+pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, CrustyError> {
     let mut command = Command::new(program);
     command
         .args(args)
@@ -43,11 +46,15 @@ pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, S
         Ok(child) => {
             let pid = child.id();
             let _ = save_pid(key, pid);
+            trace!("Spawn process: {} [PID={}]", program, pid);
             Ok(pid)
         }
         Err(e) => {
             error!("Error: {}", e);
-            Err(format!("Failed to spawn process"))
+            Err(CrustyError::ProcessError(format!(
+                "Failed to spawn process. Cause: {}",
+                e
+            )))
         }
     }
 }
@@ -56,9 +63,12 @@ fn get_pid_file_path(key: &str) -> PathBuf {
     AppConfig::get_config_dir().join(format!("process_{}.pid", key))
 }
 
-pub fn save_pid(key: &str, pid: u32) -> Result<(), Box<dyn Error>> {
+pub fn save_pid(key: &str, pid: u32) -> Result<(), CrustyError> {
     let path = get_pid_file_path(key);
-    fs::write(path, pid.to_string())?;
+    fs::write(path, pid.to_string()).map_err(|e| {
+        return CrustyError::ProcessError(format!("Cannot save pid {}. Cause: {}", pid, e));
+    })?;
+    trace!("Save pid: {}", pid);
     Ok(())
 }
 
@@ -99,7 +109,7 @@ pub fn get_validated_process(key: &str, expected_name: &str) -> Option<u32> {
     None
 }
 
-pub fn stop_process(key: &str) -> Result<(), Box<dyn Error>> {
+pub fn stop_process(key: &str) -> Result<(), CrustyError> {
     // Try to read queued PID and kill the process directly. Some spawned
     // processes (eg. via `npx`) may exit and leave their child (tray) process
     // running — so also scan all processes for ones related to `9router` and
@@ -111,19 +121,34 @@ pub fn stop_process(key: &str) -> Result<(), Box<dyn Error>> {
 
         if let Some(p) = sys.process(Pid::from(pid as usize)) {
             let _ = p.kill();
+            trace!("Stop process: PID={} ", pid);
         }
     }
 
-    clear_pid(key)?;
+    let _ = clear_pid(key).map_err(|e| {
+        return CrustyError::ProcessError(format!(
+            "Cannot stop process with name {}. Cause: {}",
+            key, e
+        ));
+    });
     Ok(())
 }
 
-pub fn stop_process_by_port(port: u64) -> Result<(), Box<dyn Error>> {
+pub fn stop_process_by_port(port: u64) -> Result<(), CrustyError> {
     let mut pids: std::collections::HashSet<u32> = std::collections::HashSet::new();
 
     if cfg!(target_os = "windows") {
         // -a: all, -n: numerical, -o: owner (PID)
-        let output = Command::new("netstat").args(&["-ano"]).output()?;
+        let output = Command::new("netstat")
+            .args(&["-ano"])
+            .output()
+            .map_err(|e| {
+                return CrustyError::ProcessError(format!(
+                    "Cannot stop process on port {}. Cause: {}",
+                    port, e
+                ));
+            })?;
+
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         for line in stdout.lines() {
@@ -140,15 +165,20 @@ pub fn stop_process_by_port(port: u64) -> Result<(), Box<dyn Error>> {
             }
         }
     } else {
-        if let Ok(output) = Command::new("lsof")
+        let output = Command::new("lsof")
             .args(&["-i", &format!(":{}", port), "-t"])
             .output()
-        {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines() {
-                if let Ok(pid) = line.trim().parse::<u32>() {
-                    pids.insert(pid);
-                }
+            .map_err(|e| {
+                return CrustyError::ProcessError(format!(
+                    "Cannot stop process on port {}. Cause: {}",
+                    port, e
+                ));
+            })?;
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            if let Ok(pid) = line.trim().parse::<u32>() {
+                pids.insert(pid);
             }
         }
     }
@@ -160,9 +190,15 @@ pub fn stop_process_by_port(port: u64) -> Result<(), Box<dyn Error>> {
     for pid in pids {
         println!("Killing PID: {}", pid);
         if cfg!(target_os = "windows") {
-            let _ = Command::new("taskkill")
+            Command::new("taskkill")
                 .args(&["/F", "/T", "/PID", &pid.to_string()])
-                .output();
+                .output()
+                .map_err(|e| {
+                    return CrustyError::ProcessError(format!(
+                        "Cannot stop process on port {}. Cause: {}",
+                        port, e
+                    ));
+                })?;
         } else {
             let mut sys = System::new_all();
             sys.refresh_processes(
@@ -179,14 +215,23 @@ pub fn stop_process_by_port(port: u64) -> Result<(), Box<dyn Error>> {
         }
     }
 
+    trace!("Stop process on port {}", port);
     Ok(())
 }
 
-pub fn get_pids_by_port(port: u64) -> Result<Vec<u32>, Box<dyn Error>> {
+pub fn get_pids_by_port(port: u64) -> Result<Vec<u32>, CrustyError> {
     let mut pids: Vec<u32> = vec![];
 
     if cfg!(target_os = "windows") {
-        let output = Command::new("netstat").args(&["-ano"]).output()?;
+        let output = Command::new("netstat")
+            .args(&["-ano"])
+            .output()
+            .map_err(|e| {
+                return CrustyError::ProcessError(format!(
+                    "Cannot stop process on port {}. Cause: {}",
+                    port, e
+                ));
+            })?;
         let stdout = String::from_utf8_lossy(&output.stdout);
 
         for line in stdout.lines() {
@@ -202,16 +247,21 @@ pub fn get_pids_by_port(port: u64) -> Result<Vec<u32>, Box<dyn Error>> {
             }
         }
     } else {
-        if let Ok(output) = Command::new("lsof")
+        let output = Command::new("lsof")
             .args(&["-i", &format!(":{}", port), "-t"])
             .output()
-        {
-            if output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                for line in stdout.lines() {
-                    if let Ok(pid) = line.trim().parse::<u32>() {
-                        pids.push(pid);
-                    }
+            .map_err(|e| {
+                return CrustyError::ProcessError(format!(
+                    "Cannot stop process on port {}. Cause: {}",
+                    port, e
+                ));
+            })?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                if let Ok(pid) = line.trim().parse::<u32>() {
+                    pids.push(pid);
                 }
             }
         }

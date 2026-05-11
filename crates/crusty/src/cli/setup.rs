@@ -1,14 +1,16 @@
 use std::collections::HashMap;
 
 use dialoguer::{Confirm, Input, theme::ColorfulTheme};
+use tracing::{error, trace};
 
 use crate::{
     ai_proxy::{_9router::_9RouterAIProxy, ai_proxy::AIProxy},
     config::{ai_proxy::AIProxyConfig, config::AppConfig, store::StoreConfig},
+    exceptions::crusty::CrustyError,
     helpers::tui::{print_error, print_info, print_success, show_menu},
 };
 
-fn setup_9router() -> AIProxyConfig {
+fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
     let theme = ColorfulTheme::default();
     let port: u64;
     let mut host = format!("localhost");
@@ -31,9 +33,20 @@ fn setup_9router() -> AIProxyConfig {
         .unwrap();
 
     let proxy = _9RouterAIProxy { port };
-    if !proxy.is_install() {
-        print_info("Installing 9router ...");
-        let _ = proxy.install();
+    match proxy.is_install() {
+        Ok(false) => {
+            print_info("Installing 9router ...");
+            proxy.install()?;
+        }
+
+        Err(e) => {
+            error!(?e, "Check install failed");
+            return Err(e.into());
+        }
+
+        Ok(_) => {
+            trace!("Proxy already installed, skipping...");
+        }
     }
 
     print_info(&format!(
@@ -45,14 +58,14 @@ fn setup_9router() -> AIProxyConfig {
         host, port
     ));
 
-    AIProxyConfig {
+    Ok(AIProxyConfig {
         platform: format!("9router"),
         is_local,
         host,
         port,
         api_key: None,
         current_model: Some(format!("crusty_combo")),
-    }
+    })
 }
 
 pub fn handle_setup() {
@@ -61,13 +74,13 @@ pub fn handle_setup() {
         return;
     };
 
-    let mut db_path = AppConfig::get_data_dir();
-    db_path.push("store.db");
-
     let name: String = Input::with_theme(&theme)
         .with_prompt("What is proxy name ?")
         .interact_text()
         .unwrap();
+
+    let mut db_path = AppConfig::get_data_dir();
+    db_path.push("store.db");
 
     let mut config = AppConfig {
         current_proxy: None,
@@ -75,14 +88,26 @@ pub fn handle_setup() {
         plugins: vec![],
         store: Some(StoreConfig {
             store_type: "sqlite".into(),
-            uri: db_path.to_str().unwrap().to_string(),
+            uri: format!(
+                "sqlite:{}?mode=rwc",
+                db_path.to_str().unwrap().replace("\\", "/")
+            ),
         }),
     };
 
     if select == 0 {
-        let c = setup_9router();
-        config.ai_proxies.insert(name.clone(), c);
-        config.current_proxy = Some(name);
+        match setup_9router() {
+            Ok(c) => {
+                config.ai_proxies.insert(name.clone(), c);
+                config.current_proxy = Some(name);
+            }
+
+            Err(e) => {
+                error!(error = ?e, "Failed to setup 9router status");
+                print_error(&format!("Failed to setup 9router. Please try again"));
+                return;
+            }
+        };
     }
 
     match config.save() {

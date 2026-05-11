@@ -6,7 +6,7 @@ use crusty_plugin::{
     bridge::{ControlCallback, Plugin, PluginRef},
     plugin::PluginInfo,
 };
-use teloxide::prelude::*;
+// teloxide usage moved into `bot` module; hide unused prelude here
 
 use crate::bot::start_bot;
 

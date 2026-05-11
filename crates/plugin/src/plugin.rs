@@ -1,7 +1,4 @@
-use abi_stable::{
-    StableAbi,
-    std_types::{RStr, RString, RVec},
-};
+use abi_stable::{StableAbi, std_types::RString};
 
 #[repr(C)]
 #[derive(StableAbi, Clone)]

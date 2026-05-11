@@ -2,6 +2,7 @@ use crate::agent::memory::session::Session;
 use crate::agent::message::ChatMessage;
 use crate::agent::message::TextMessage;
 use crate::agent::prompt::SYSTEM_PROMPT;
+use crate::exceptions::crusty::CrustyError;
 use futures_util::stream::StreamExt;
 use rig::agent::Agent;
 use rig::agent::MultiTurnStreamItem;
@@ -11,7 +12,7 @@ use rig::providers::openai;
 use rig::streaming::StreamedAssistantContent;
 use rig::streaming::StreamingChat;
 
-use tracing::error;
+use tracing::trace;
 pub struct ChatAgent<T: rig::completion::CompletionModel> {
     agent: Agent<T>,
 }
@@ -26,11 +27,13 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
         prompt: &str,
         session: &mut Session,
         mut on_message: F,
-    ) -> Result<(), String>
+    ) -> Result<(), CrustyError>
     where
         F: FnMut(ChatMessage) + Send + Sync + 'static,
     {
-        session.history.push(Message::user(prompt.to_string()));
+        session
+            .add_message("user", Message::user(prompt.to_string()))
+            .await?;
         let mut stream = self
             .agent
             .stream_chat(prompt, session.history.clone())
@@ -39,8 +42,7 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
 
         while let Some(chunk) = stream.next().await {
             let stream_obj = chunk.map_err(|e| {
-                error!("Error: {:?}", e);
-                format!("Failed to send request. Check log for details")
+                CrustyError::AgentError(format!("Failed to send request. Cause: {}", e))
             })?;
 
             match stream_obj {
@@ -58,7 +60,9 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
                 _ => {}
             }
         }
-        session.history.push(Message::assistant(full_response));
+        session
+            .add_message("assistant", Message::assistant(full_response))
+            .await?;
         Ok(())
     }
 }
@@ -77,9 +81,13 @@ pub fn create_chat_agent(
 
     let agent = client
         .expect("Cannot create agent")
-        .agent(model)
+        .agent(&model)
         .preamble(SYSTEM_PROMPT)
         .build();
 
+    trace!(
+        "Agent initialization successful. AI Proxy port: {}; Model: {}",
+        port, model
+    );
     ChatAgent::new(agent)
 }

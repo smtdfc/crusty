@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use tracing::error;
 
 use crate::{
     cli::utils::get_active_proxy,
@@ -21,7 +22,9 @@ pub fn handle_proxy_start() {
     let config = match AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {
-            print_error(&format!("{}", e));
+            error!(error = ?e, "Failed to load config");
+            print_error(&format!("Failed to load config"));
+
             return;
         }
     };
@@ -29,27 +32,31 @@ pub fn handle_proxy_start() {
         return;
     };
 
-    if !proxy.is_running() {
-        match proxy.start() {
+    match proxy.is_running() {
+        Ok(_t) => match proxy.start() {
             Ok(()) => {
                 print_info(&format!(
-                    "Proxy {} (platform: {}) is running on port {}",
-                    current_proxy, proxy_config.platform, proxy_config.port
+                    "Proxy {} (platform: {}) is started",
+                    current_proxy, proxy_config.platform
                 ));
             }
 
             Err(e) => {
+                error!(error = ?e, "Failed to start proxy");
                 print_error(&format!(
                     "Cannot start proxy {} (platform: {}) on port {}. Please check log for details.",
                     current_proxy, proxy_config.platform, proxy_config.port
                 ));
             }
+        },
+
+        Err(e) => {
+            error!(error = ?e, "Failed to start proxy");
+            print_error(&format!(
+                "Cannot start proxy {} (platform: {}) on port {}. Please check log for details.",
+                current_proxy, proxy_config.platform, proxy_config.port
+            ));
         }
-    } else {
-        print_info(&format!(
-            "Proxy {} (platform: {}) is running on port {}",
-            current_proxy, proxy_config.platform, proxy_config.port
-        ));
     }
 }
 
@@ -62,12 +69,13 @@ pub fn handle_proxy_stop() {
             return;
         }
     };
+
     let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "stop") else {
         return;
     };
 
-    if proxy.is_running() {
-        match proxy.stop() {
+    match proxy.is_running() {
+        Ok(_t) => match proxy.stop() {
             Ok(()) => {
                 print_info(&format!(
                     "Proxy {} (platform: {}) is stopped",
@@ -76,16 +84,20 @@ pub fn handle_proxy_stop() {
             }
 
             Err(e) => {
+                error!(error = ?e, "Failed to stop proxy");
                 print_error(&format!(
                     "Cannot stop proxy {} (platform: {}) on port {}. Please check log for details.",
                     current_proxy, proxy_config.platform, proxy_config.port
                 ));
             }
+        },
+
+        Err(e) => {
+            error!(error = ?e, "Failed to stop proxy");
+            print_error(&format!(
+                "Cannot stop proxy {} (platform: {}) on port {}. Please check log for details.",
+                current_proxy, proxy_config.platform, proxy_config.port
+            ));
         }
-    } else {
-        print_info(&format!(
-            "Proxy {} (platform: {}) not run",
-            current_proxy, proxy_config.platform
-        ));
     }
 }

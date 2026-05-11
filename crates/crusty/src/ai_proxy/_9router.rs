@@ -4,10 +4,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use tracing::error;
+use tracing::trace;
 
 use crate::{
     ai_proxy::ai_proxy::AIProxy,
+    exceptions::crusty::CrustyError,
     helpers::{
         npm::{check_npm_package, install_npm_package},
         process::{NPX_CMD, get_pids_by_port, save_pid, spawn_process, stop_process_by_port},
@@ -19,16 +20,16 @@ pub struct _9RouterAIProxy {
 }
 
 impl AIProxy for _9RouterAIProxy {
-    fn is_install(&self) -> bool {
+    fn is_install(&self) -> Result<bool, CrustyError> {
         check_npm_package("9router")
     }
 
-    fn is_running(&self) -> bool {
+    fn is_running(&self) -> Result<bool, CrustyError> {
         let addr: SocketAddr = format!("127.0.0.1:{}", self.port).parse().unwrap();
 
         match TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
-            Ok(_) => true,
-            Err(_) => false,
+            Ok(_) => Ok(true),
+            Err(e) => Ok(false),
         }
     }
 
@@ -36,7 +37,7 @@ impl AIProxy for _9RouterAIProxy {
         format!("localhost:{}", self.port)
     }
 
-    fn start(&self) -> Result<(), String> {
+    fn start(&self) -> Result<(), CrustyError> {
         spawn_process(
             "9router",
             NPX_CMD,
@@ -56,25 +57,28 @@ impl AIProxy for _9RouterAIProxy {
         while start_time.elapsed() < timeout {
             match get_pids_by_port(self.port) {
                 Ok(pids) if !pids.is_empty() => {
-                    if let Err(e) = save_pid("9router", pids[0]) {
-                        error!("Failed to save detected pid: {}", e);
-                    }
+                    save_pid("9router", pids[0])?;
+                    trace!("9router started");
                     return Ok(());
                 }
                 _ => thread::sleep(Duration::from_millis(200)),
             }
         }
 
-        Err(format!("Failed to start 9router on port {}", self.port))
+        Err(CrustyError::AIProxyError(format!(
+            "Failed to start 9router on port {}",
+            self.port
+        )))
     }
 
-    fn stop(&self) -> Result<(), String> {
-        stop_process_by_port(self.port).map_err(|e| format!("{}", e))?;
+    fn stop(&self) -> Result<(), CrustyError> {
+        stop_process_by_port(self.port)?;
+        trace!("9router stopped");
         Ok(())
     }
 
-    fn install(&self) -> Result<(), String> {
-        install_npm_package("9router", true);
+    fn install(&self) -> Result<(), CrustyError> {
+        install_npm_package("9router", true)?;
         Ok(())
     }
 }

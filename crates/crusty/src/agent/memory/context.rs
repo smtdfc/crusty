@@ -1,22 +1,24 @@
-use crate::agent::memory::message::ChatRow;
+use crate::{agent::memory::message::ChatRow, exceptions::crusty::CrustyError};
 use chrono::Utc;
 use rig::message::Message;
 use sqlx::{AnyPool, query, query_as};
+use tracing::trace;
 
 pub async fn get_context(
     pool: &AnyPool,
     session_id: &str,
     limit: u32,
-) -> Result<Vec<Message>, Box<dyn std::error::Error>> {
+) -> Result<Vec<Message>, CrustyError> {
     let rows = query_as::<sqlx::Any, ChatRow>(
         "SELECT * FROM messages WHERE session_id = ? ORDER BY created_at DESC LIMIT ?",
     )
     .bind(session_id)
     .bind(limit as i32)
     .fetch_all(pool)
-    .await?;
+    .await
+    .map_err(|e| CrustyError::AgentMemoryError(format!("Failed to query. Cause: {}", e)))?;
 
-    let messages = rows
+    let messages: Vec<Message> = rows
         .into_iter()
         .rev()
         .map(|row| {
@@ -28,6 +30,13 @@ pub async fn get_context(
         })
         .collect();
 
+    trace!(
+        "Query message for session: {} with limit {}. Successful with {} message(s)",
+        session_id,
+        limit,
+        messages.len()
+    );
+
     Ok(messages)
 }
 
@@ -36,7 +45,7 @@ pub async fn save_message(
     session_id: &str,
     role: &str,
     content: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), CrustyError> {
     let now = Utc::now().timestamp();
 
     query("INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)")
@@ -45,7 +54,13 @@ pub async fn save_message(
         .bind(content)
         .bind(now)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| CrustyError::AgentMemoryError(format!("Failed to query. Cause: {}", e)))?;
+
+    trace!(
+        "Query save message for session: {} with role {}. Successful",
+        session_id, role
+    );
 
     Ok(())
 }

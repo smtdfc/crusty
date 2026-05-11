@@ -1,11 +1,14 @@
-use crate::{ai_proxy::_9router::_9RouterAIProxy, config::ai_proxy::AIProxyConfig};
+use crate::{
+    ai_proxy::_9router::_9RouterAIProxy, config::ai_proxy::AIProxyConfig,
+    exceptions::crusty::CrustyError,
+};
 
 pub trait AIProxy {
-    fn is_install(&self) -> bool;
-    fn is_running(&self) -> bool;
-    fn install(&self) -> Result<(), String>;
-    fn start(&self) -> Result<(), String>;
-    fn stop(&self) -> Result<(), String>;
+    fn is_install(&self) -> Result<bool, CrustyError>;
+    fn is_running(&self) -> Result<bool, CrustyError>;
+    fn install(&self) -> Result<(), CrustyError>;
+    fn start(&self) -> Result<(), CrustyError>;
+    fn stop(&self) -> Result<(), CrustyError>;
     fn get_url(&self) -> String;
 }
 

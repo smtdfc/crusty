@@ -7,6 +7,7 @@ use crate::{
 use console::{Term, style};
 use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
+use tracing::error;
 
 pub async fn handle_chat_start(config: &AppConfig) {
     let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "start") else {
@@ -14,9 +15,10 @@ pub async fn handle_chat_start(config: &AppConfig) {
     };
 
     let Some(ref store_config) = config.store else {
+        print_error("No store config. Please config storage first.");
         return;
     };
-    let is_proxy_online = proxy.is_running();
+
     let theme = ColorfulTheme::default();
     let term = Term::stdout();
 
@@ -25,21 +27,42 @@ pub async fn handle_chat_start(config: &AppConfig) {
         return;
     };
 
-    if !is_proxy_online {
-        print_error(
-            format!(
+    match proxy.is_running() {
+        Ok(false) => {
+            print_error(&format!(
                 "Proxy {} (platform: {}) is offline. Please run proxy before.",
                 current_proxy, proxy_config.platform
-            )
-            .as_str(),
-        );
-        return;
+            ));
+            return;
+        }
+
+        Err(e) => {
+            error!(error = ?e, "Failed to check proxy status");
+            print_error(&format!("Failed to check proxy. Please try again"));
+            return;
+        }
+
+        Ok(true) => {}
     }
 
-    let api_key = proxy_config.api_key.as_deref().unwrap_or("").to_string();
-    let mut session = create_session(&store_config).expect("Cannot create session");
+    let api_key = match proxy_config.api_key.as_deref() {
+        None => String::from(""),
+        Some(v) => v.to_string(),
+    };
+
+    let mut session = match create_session(&store_config).await {
+        Ok(s) => s,
+        Err(e) => {
+            error!(error = ?e, "Failed to create session");
+            print_error(&format!("Cannot init chat session now. Cause: {}", e));
+            return;
+        }
+    };
+
     let mut agent = create_chat_agent(proxy_config.port, api_key, model_name);
-    term.clear_screen().unwrap();
+    term.clear_screen().unwrap_or_else(|e| {
+        print_error(&format!("Failed to init console. Cause: {}", e));
+    });
 
     loop {
         let input: Result<String, _> = Input::with_theme(&theme).with_prompt("You").interact_text();
@@ -70,15 +93,17 @@ pub async fn handle_chat_start(config: &AppConfig) {
                     })
                     .await
                     .unwrap_or_else(|e| {
-                        print!("{} ", style("System:").red().bold());
-                        print!("{}", e);
+                        error!(error = ?e, "Failed to load chat");
+                        print_error(&format!("Cannot load message. Cause: {}", e));
                         std::io::stdout().flush().unwrap();
                     });
 
                 println!("\n");
             }
-            Err(_) => {
-                break;
+            Err(e) => {
+                error!(error = ?e, "Failed to send message");
+                print_error(&format!("Failed to get input from std::io. Cause: {}", e));
+                return;
             }
         }
     }

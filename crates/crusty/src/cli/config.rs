@@ -1,13 +1,17 @@
-use console::style;
+use tracing::error;
 
-use crate::{config::config::AppConfig, helpers::tui::show_loading};
+use crate::{
+    config::config::AppConfig,
+    helpers::tui::{print_error, show_loading},
+};
 
 pub fn handle_config() {
     show_loading("Preparing ...");
-    let config = match AppConfig::load() {
+    let _config = match AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {
-            eprintln!("{} {}", style("Error:").red().bold(), e);
+            error!(error = ?e, "Failed to load config");
+            print_error(&format!("Failed to load config"));
 
             return;
         }

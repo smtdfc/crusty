@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use tracing::error;
 
 use crate::{
     config::config::AppConfig,
@@ -18,7 +19,9 @@ pub fn handle_plugin_install(path: &String) {
     let mut config = match AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {
-            print_error(&format!("{}", e));
+            error!(error = ?e, "Failed to load config");
+            print_error(&format!("Failed to load config"));
+
             return;
         }
     };

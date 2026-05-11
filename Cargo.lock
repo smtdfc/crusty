@@ -580,6 +580,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "sysinfo",
+ "thiserror 1.0.69",
  "tokio",
  "tracing",
  "tracing-appender",

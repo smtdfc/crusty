@@ -1,6 +1,8 @@
 // use console::Term;
 // use dialoguer::theme::ColorfulTheme;
 
+use tracing::error;
+
 use crate::{
     agent::memory::session::create_session,
     cli::{chat::handle_chat_start, config::handle_config, utils::get_active_proxy},
@@ -14,7 +16,9 @@ pub async fn handle_start(jump_to_chat: bool) {
     let config = match AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {
-            print_error(&format!("{}", e));
+            error!(error = ?e, "Failed to load config");
+            print_error(&format!("Failed to load config"));
+
             return;
         }
     };
@@ -23,7 +27,7 @@ pub async fn handle_start(jump_to_chat: bool) {
     };
 
     let mut plugin_manager = PluginManager::new();
-    let is_proxy_online = proxy.is_running();
+    let mut is_proxy_online = false;
     // let theme = ColorfulTheme::default();
     // let term = Term::stdout();
 
@@ -32,15 +36,23 @@ pub async fn handle_start(jump_to_chat: bool) {
         return;
     };
 
-    if !is_proxy_online {
-        print_error(
-            format!(
+    match proxy.is_running() {
+        Ok(false) => {
+            print_error(&format!(
                 "Proxy {} (platform: {}) is offline. Please run proxy before.",
                 current_proxy, proxy_config.platform
-            )
-            .as_str(),
-        );
-        return;
+            ));
+
+            return;
+        }
+
+        Err(e) => {
+            error!(error = ?e, "Failed to check proxy status");
+            print_error(&format!("Failed to check proxy. Please try again"));
+            return;
+        }
+
+        Ok(true) => is_proxy_online = true,
     }
 
     plugin_manager.load_all(&config.plugins);
@@ -50,9 +62,14 @@ pub async fn handle_start(jump_to_chat: bool) {
         print_error("Store not configured. Please setup your store.");
         return;
     };
-    let Some(session) = create_session(store_config) else {
-        print_error("Failed to create session.");
-        return;
+
+    let session = match create_session(&store_config).await {
+        Ok(s) => s,
+        Err(e) => {
+            error!(error = ?e, "Failed to create session");
+            print_error(&format!("Cannot init chat session now. Cause: {}", e));
+            return;
+        }
     };
 
     print_banner(

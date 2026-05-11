@@ -1,3 +1,5 @@
+use tracing::trace;
+
 use crate::{
     ai_proxy::ai_proxy::{AIProxy, get_proxy},
     config::{ai_proxy::AIProxyConfig, config::AppConfig},
@@ -30,13 +32,19 @@ pub fn get_active_proxy(
         return None;
     };
 
-    if !proxy.is_install() {
-        print_error(&format!(
-            "Platform {} (for {}) not install. Please run crusty setup first.",
-            proxy_config.platform, current_proxy
-        ));
-        return None;
-    };
+    match proxy.is_install() {
+        Err(_) => {
+            print_error(&format!(
+                "Platform {} (for {}) not install. Please run crusty setup first.",
+                proxy_config.platform, current_proxy
+            ));
+            return None;
+        }
+
+        Ok(_) => {
+            trace!("Proxy already installed, skipping...");
+        }
+    }
 
     Some((current_proxy, proxy_config, proxy))
 }

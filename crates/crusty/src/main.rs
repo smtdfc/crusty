@@ -46,9 +46,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
-    setup_logging();
+    let _log_guard = setup_logging();
     let cli = Cli::parse();
-
+    sqlx::any::install_default_drivers();
     match &cli.command {
         Commands::Setup => {
             handle_setup();

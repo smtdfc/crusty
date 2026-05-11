@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use crate::config::ai_proxy::AIProxyConfig;
 use crate::config::plugin::PluginConfig;
 use crate::config::store::StoreConfig;
+use crate::exceptions::crusty::CrustyError;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
@@ -17,29 +18,41 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn load() -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn load() -> Result<Self, CrustyError> {
         let config_path = Self::get_config_path();
         if !config_path.exists() {
-            return Err(
+            return Err(CrustyError::ConfigError(
                 "The configuration file does not exist. Please run crusty setup first!".into(),
-            );
+            ));
         }
 
-        let config_str = fs::read_to_string(config_path)?;
+        let config_str = fs::read_to_string(config_path).map_err(|e| {
+            return CrustyError::ConfigError(format!("Failed to load config. Cause: {}", e));
+        })?;
 
-        let config: AppConfig = serde_json::from_str(&config_str)?;
+        let config: AppConfig = serde_json::from_str(&config_str).map_err(|e| {
+            return CrustyError::ConfigError(format!("Failed to load config. Cause: {}", e));
+        })?;
 
         Ok(config)
     }
 
-    pub fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn save(&self) -> Result<(), CrustyError> {
         let config_path = Self::get_config_path();
-        let config_str = serde_json::to_string_pretty(self)?;
+        let config_str = serde_json::to_string_pretty(self).map_err(|e| {
+            return CrustyError::ConfigError(format!("Failed to load config. Cause: {}", e));
+        })?;
+
         let config_dir = Self::get_config_dir();
         if !config_dir.exists() {
-            fs::create_dir_all(config_dir)?;
+            fs::create_dir_all(config_dir).map_err(|e| {
+                return CrustyError::ConfigError(format!("Failed to save config. Cause: {}", e));
+            })?;
         }
-        fs::write(config_path, config_str)?;
+
+        fs::write(config_path, config_str).map_err(|e| {
+            return CrustyError::ConfigError(format!("Failed to load config. Cause: {}", e));
+        })?;
 
         Ok(())
     }

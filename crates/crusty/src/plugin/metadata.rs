@@ -2,6 +2,9 @@ use std::{fs::File, path::Path};
 
 use serde::Deserialize;
 use std::io::BufReader;
+use tracing::trace;
+
+use crate::exceptions::crusty::CrustyError;
 
 #[derive(Deserialize, Debug)]
 pub struct PlatformInfo {
@@ -31,18 +34,28 @@ impl PluginMetadata {
     }
 }
 
-pub fn read_metadata<P: AsRef<Path>>(
-    file_path: P,
-) -> Result<PluginMetadata, Box<dyn std::error::Error>> {
-    let file = File::open(file_path.as_ref())?;
-    let reader = BufReader::new(file);
-    let metadata: PluginMetadata = serde_json::from_reader(reader).map_err(|e| {
-        format!(
+pub fn read_metadata<P: AsRef<Path>>(file_path: P) -> Result<PluginMetadata, CrustyError> {
+    let file = File::open(file_path.as_ref()).map_err(|e| {
+        CrustyError::PluginError(format!(
             "Failed to read metadata file {}. Cause: {}",
             file_path.as_ref().to_str().unwrap(),
             e
-        )
+        ))
     })?;
+
+    let reader = BufReader::new(file);
+    let metadata: PluginMetadata = serde_json::from_reader(reader).map_err(|e| {
+        CrustyError::PluginError(format!(
+            "Failed to read metadata file {}. Cause: {}",
+            file_path.as_ref().to_str().unwrap(),
+            e
+        ))
+    })?;
+
+    trace!(
+        "[Plugin] Read metadata file: {}",
+        file_path.as_ref().display()
+    );
 
     Ok(metadata)
 }
