@@ -1,3 +1,4 @@
+use crate::agent::memory::session::Session;
 use crate::agent::message::ChatMessage;
 use crate::agent::message::TextMessage;
 use crate::agent::prompt::SYSTEM_PROMPT;
@@ -13,23 +14,27 @@ use rig::streaming::StreamingChat;
 use tracing::error;
 pub struct ChatAgent<T: rig::completion::CompletionModel> {
     agent: Agent<T>,
-    history: Vec<Message>,
 }
 
 impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
     pub fn new(agent: Agent<T>) -> Self {
-        Self {
-            agent: agent,
-            history: vec![],
-        }
+        Self { agent: agent }
     }
 
-    pub async fn chat<F>(&mut self, prompt: &str, mut on_message: F) -> Result<(), String>
+    pub async fn chat<F>(
+        &mut self,
+        prompt: &str,
+        session: &mut Session,
+        mut on_message: F,
+    ) -> Result<(), String>
     where
         F: FnMut(ChatMessage) + Send + Sync + 'static,
     {
-        self.history.push(Message::user(prompt.to_string()));
-        let mut stream = self.agent.stream_chat(prompt, self.history.clone()).await;
+        session.history.push(Message::user(prompt.to_string()));
+        let mut stream = self
+            .agent
+            .stream_chat(prompt, session.history.clone())
+            .await;
         let mut full_response = String::new();
 
         while let Some(chunk) = stream.next().await {
@@ -53,7 +58,7 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
                 _ => {}
             }
         }
-        self.history.push(Message::assistant(full_response));
+        session.history.push(Message::assistant(full_response));
         Ok(())
     }
 }
@@ -63,7 +68,7 @@ pub fn create_chat_agent(
     api_key: String,
     model: String,
 ) -> ChatAgent<impl rig::completion::CompletionModel> {
-    let http_client = reqwest::Client::new();
+    // let http_client = reqwest::Client::new();
     let client = openai::Client::builder()
         .api_key(api_key)
         // .http_client(http_client)

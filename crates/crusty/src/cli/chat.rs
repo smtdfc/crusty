@@ -1,27 +1,21 @@
 use crate::{
-    agent::{agent::create_chat_agent, message::ChatMessage},
+    agent::{agent::create_chat_agent, memory::session::create_session, message::ChatMessage},
     cli::utils::get_active_proxy,
     config::config::AppConfig,
-    helpers::tui::{print_banner, print_error, show_loading},
+    helpers::tui::{print_error, show_loading},
 };
 use console::{Term, style};
 use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
 
-pub async fn handle_chat_start(show_banner: bool) {
-    show_loading("Preparing ...");
-    let config = match AppConfig::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            print_error(&format!("{}", e));
-            return;
-        }
-    };
-
+pub async fn handle_chat_start(config: &AppConfig) {
     let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "start") else {
         return;
     };
 
+    let Some(ref store_config) = config.store else {
+        return;
+    };
     let is_proxy_online = proxy.is_running();
     let theme = ColorfulTheme::default();
     let term = Term::stdout();
@@ -42,18 +36,8 @@ pub async fn handle_chat_start(show_banner: bool) {
         return;
     }
 
-    if show_banner {
-        print_banner(
-            &model_name,
-            &current_proxy,
-            &proxy_config.platform,
-            &proxy_config.host,
-            proxy_config.port,
-            is_proxy_online,
-        );
-    }
-
     let api_key = proxy_config.api_key.as_deref().unwrap_or("").to_string();
+    let mut session = create_session(&store_config).expect("Cannot create session");
     let mut agent = create_chat_agent(proxy_config.port, api_key, model_name);
     term.clear_screen().unwrap();
 
@@ -70,7 +54,7 @@ pub async fn handle_chat_start(show_banner: bool) {
                 let mut first_chunk = true;
 
                 agent
-                    .chat(&prompt, move |m| {
+                    .chat(&prompt, &mut session, move |m| {
                         if first_chunk {
                             pb.finish_and_clear();
                             print!("{} ", style("Agent:").green().bold());

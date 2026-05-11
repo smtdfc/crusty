@@ -32,7 +32,7 @@ pub fn show_loading(text: &str) -> ProgressBar {
     return pb;
 }
 
-use console::{pad_str, Alignment};
+use console::{Alignment, pad_str};
 
 pub fn print_banner(
     model_name: &str,
@@ -41,6 +41,7 @@ pub fn print_banner(
     host: &str,
     port: u64,
     is_proxy_online: bool,
+    session_id: &str,
 ) {
     let term = console::Term::stdout();
     let _ = term.clear_screen();
@@ -56,22 +57,59 @@ pub fn print_banner(
 
     println!("{}", style(format!("┌{}┐", line)).dim());
 
-    let header = format!(" {} {}", style("●").cyan(), style("CRUSTY AGENT v0.1.0").bold());
-    println!("{} {} {}", style("│").dim(), pad_str(&header, w, Alignment::Left, None), style("│").dim());
+    let header = format!(
+        " {} {}",
+        style("●").cyan(),
+        style("CRUSTY AGENT v0.1.0").bold()
+    );
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&header, w, Alignment::Left, None),
+        style("│").dim()
+    );
 
     println!("{}", style(format!("├{}┤", line)).dim());
 
     let model_line = format!(" Model   : {}", style(model_name).yellow());
-    println!("{} {} {}", style("│").dim(), pad_str(&model_line, w, Alignment::Left, None), style("│").dim());
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&model_line, w, Alignment::Left, None),
+        style("│").dim()
+    );
 
     let proxy_line = format!(" Proxy   : {} ({})", proxy_name, proxy_platform);
-    println!("{} {} {}", style("│").dim(), pad_str(&proxy_line, w, Alignment::Left, None), style("│").dim());
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&proxy_line, w, Alignment::Left, None),
+        style("│").dim()
+    );
 
     let address_line = format!(" Address : {}:{}", host, port);
-    println!("{} {} {}", style("│").dim(), pad_str(&address_line, w, Alignment::Left, None), style("│").dim());
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&address_line, w, Alignment::Left, None),
+        style("│").dim()
+    );
 
     let status_line = format!(" Status  : {}", proxy_status);
-    println!("{} {} {}", style("│").dim(), pad_str(&status_line, w, Alignment::Left, None), style("│").dim());
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&status_line, w, Alignment::Left, None),
+        style("│").dim()
+    );
+
+    let session_line = format!(" Session : {}", style(session_id).cyan());
+    println!(
+        "{} {} {}",
+        style("│").dim(),
+        pad_str(&session_line, w, Alignment::Left, None),
+        style("│").dim()
+    );
 
     println!("{}", style(format!("└{}┘", line)).dim());
     println!();

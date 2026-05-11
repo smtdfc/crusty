@@ -25,23 +25,26 @@ def get_extension(target):
     return ".so"
 
 
-def build_targets(use_cross=False):
+def build_targets(use_cross=False, target=None):
     compiler = "cross" if use_cross else "cargo"
     print(f"[{PLUGIN_NAME}] Starting build using {compiler.upper()}...")
 
-    for target, _, _ in TARGET_MAP:
-        print(f"Compiling {target}...")
+    targets_to_build = [
+        t for t in TARGET_MAP if target is None or t[0] == target]
+    for target_tuple, _, _ in targets_to_build:
+        print(f"Compiling {target_tuple}...")
         if not use_cross:
-            subprocess.run(["rustup", "target", "add", target], check=True)
+            subprocess.run(["rustup", "target", "add",
+                           target_tuple], check=True)
 
-        cmd = [compiler, "build", "--release", "--target", target]
+        cmd = [compiler, "build", "--release", "--target", target_tuple]
         try:
             subprocess.run(cmd, check=True)
         except subprocess.CalledProcessError:
-            print(f"Error building {target}. Skipping...")
+            print(f"Error building {target_tuple}. Skipping...")
 
 
-def ship_it(output_dir):
+def ship_it(output_dir, target=None):
     workspace_root = Path.cwd().parent.parent
 
     plugin_dest_folder = Path(output_dir).joinpath(*PLUGIN_ID.split('/'))
@@ -49,10 +52,12 @@ def ship_it(output_dir):
 
     print(f"Packaging {PLUGIN_ID} to: {plugin_dest_folder}")
 
-    for target, os_name, arch_name in TARGET_MAP:
-        ext = get_extension(target)
+    targets_to_ship = [
+        t for t in TARGET_MAP if target is None or t[0] == target]
+    for target_triple, os_name, arch_name in targets_to_ship:
+        ext = get_extension(target_triple)
         source_file = workspace_root / "target" / \
-            target / "release" / f"{PLUGIN_NAME}{ext}"
+            target_triple / "release" / f"{PLUGIN_NAME}{ext}"
 
         # Fallback if binary is in root target/release (for native host builds)
         if not source_file.exists():
@@ -96,8 +101,10 @@ if __name__ == "__main__":
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--cross", action="store_true")
     parser.add_argument("--no-build", action="store_true")
+    parser.add_argument("--target", type=str, default=None,
+                        help="Specific target to build (e.g., x86_64-pc-windows-msvc)")
     args = parser.parse_args()
 
     if not args.no_build:
-        build_targets(use_cross=args.cross)
-    ship_it(args.out)
+        build_targets(use_cross=args.cross, target=args.target)
+    ship_it(args.out, target=args.target)

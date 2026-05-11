@@ -1,5 +1,4 @@
 use clap::Parser;
-use crusty_core::cli::chat::handle_chat_start;
 use crusty_core::cli::config::handle_config;
 use crusty_core::cli::plugin::{PluginCommands, handle_plugin_install};
 use crusty_core::cli::proxy::{ProxyCommands, handle_proxy_start, handle_proxy_stop};
@@ -20,9 +19,6 @@ struct Cli {
 
 #[derive(clap::Subcommand)]
 enum Commands {
-    /// Start a new interactive chat session with the AI agent
-    Chat,
-
     /// Manage AI proxies (start, stop, dashboard)
     Proxy {
         #[command(subcommand)]
@@ -40,7 +36,12 @@ enum Commands {
     /// Configure settings, models, and switch active proxies
     Config,
 
-    Start,
+    /// Start interactive session with option to jump directly to chat
+    Start {
+        /// Jump directly to chat without showing menu
+        #[arg(long)]
+        chat: bool,
+    },
 }
 
 #[tokio::main]
@@ -57,12 +58,8 @@ async fn main() {
             handle_config();
         }
 
-        Commands::Start => {
-            handle_start().await;
-        }
-
-        Commands::Chat {} => {
-            handle_chat_start(true).await;
+        Commands::Start { chat } => {
+            handle_start(*chat).await;
         }
 
         Commands::Proxy { sub } => match sub {

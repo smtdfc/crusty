@@ -6,12 +6,14 @@ use std::path::PathBuf;
 
 use crate::config::ai_proxy::AIProxyConfig;
 use crate::config::plugin::PluginConfig;
+use crate::config::store::StoreConfig;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
     pub current_proxy: Option<String>,
     pub ai_proxies: HashMap<String, AIProxyConfig>,
     pub plugins: Vec<PluginConfig>,
+    pub store: Option<StoreConfig>,
 }
 
 impl AppConfig {

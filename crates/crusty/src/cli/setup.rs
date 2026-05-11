@@ -4,7 +4,7 @@ use dialoguer::{Confirm, Input, theme::ColorfulTheme};
 
 use crate::{
     ai_proxy::{_9router::_9RouterAIProxy, ai_proxy::AIProxy},
-    config::{ai_proxy::AIProxyConfig, config::AppConfig},
+    config::{ai_proxy::AIProxyConfig, config::AppConfig, store::StoreConfig},
     helpers::tui::{print_error, print_info, print_success, show_menu},
 };
 
@@ -61,6 +61,9 @@ pub fn handle_setup() {
         return;
     };
 
+    let mut db_path = AppConfig::get_data_dir();
+    db_path.push("store.db");
+
     let name: String = Input::with_theme(&theme)
         .with_prompt("What is proxy name ?")
         .interact_text()
@@ -70,6 +73,10 @@ pub fn handle_setup() {
         current_proxy: None,
         ai_proxies: HashMap::new(),
         plugins: vec![],
+        store: Some(StoreConfig {
+            store_type: "sqlite".into(),
+            uri: db_path.to_str().unwrap().to_string(),
+        }),
     };
 
     if select == 0 {
