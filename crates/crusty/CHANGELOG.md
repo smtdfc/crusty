@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/smtdfc/crusty/compare/crusty-v0.1.2...crusty-v0.1.3) - 2026-05-11
+
+### Added
+
+- Introduce CrustyError for better error handling across the application
+- restructure project to include new Telegram plugin and session management
+- enhance plugin system with chat functionality and configuration handling
+- implement plugin system with installation and metadata handling
+
+### Other
+
+- release
+- release
+- Refactor Crusty Agent: Restructure project into crates, implement AI proxy functionality, and enhance CLI commands
+
 ## [0.1.2](https://github.com/smtdfc/crusty/compare/crusty-v0.1.1...crusty-v0.1.2) - 2026-05-10
 
 ### Added
