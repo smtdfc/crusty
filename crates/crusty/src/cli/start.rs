@@ -4,7 +4,7 @@
 use tracing::error;
 
 use crate::{
-    agent::memory::session::create_session,
+    agent::memory::{session::create_session, store::get_store},
     cli::{chat::handle_chat_start, config::handle_config, utils::get_active_proxy},
     config::config::AppConfig,
     helpers::tui::{print_banner, print_error, show_loading, show_menu},
@@ -62,8 +62,16 @@ pub async fn handle_start(jump_to_chat: bool) {
         print_error("Store not configured. Please setup your store.");
         return;
     };
+    let memory_store = match get_store(store_config).await {
+        Ok(s) => s,
+        Err(e) => {
+            error!(error = ?e, "Failed to create session");
+            print_error(&format!("Cannot init chat session now. Cause: {}", e));
+            return;
+        }
+    };
 
-    let session = match create_session(&store_config).await {
+    let session = match create_session(&memory_store).await {
         Ok(s) => s,
         Err(e) => {
             error!(error = ?e, "Failed to create session");
@@ -83,7 +91,7 @@ pub async fn handle_start(jump_to_chat: bool) {
     );
 
     if jump_to_chat {
-        handle_chat_start(&config).await;
+        handle_chat_start(&config, &memory_store).await;
         return;
     }
 
@@ -93,7 +101,7 @@ pub async fn handle_start(jump_to_chat: bool) {
         };
 
         if opt == 0 {
-            handle_chat_start(&config).await;
+            handle_chat_start(&config, &memory_store).await;
         } else if opt == 1 {
             handle_config();
         }

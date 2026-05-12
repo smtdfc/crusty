@@ -1,5 +1,9 @@
 use crate::{
-    agent::{agent::create_chat_agent, memory::session::create_session, message::ChatMessage},
+    agent::{
+        agent::create_chat_agent,
+        memory::{session::create_session, store::MemoryStore},
+        message::ChatMessage,
+    },
     cli::utils::get_active_proxy,
     config::config::AppConfig,
     helpers::tui::{print_error, show_loading},
@@ -9,13 +13,8 @@ use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
 use tracing::error;
 
-pub async fn handle_chat_start(config: &AppConfig) {
-    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "start") else {
-        return;
-    };
-
-    let Some(ref store_config) = config.store else {
-        print_error("No store config. Please config storage first.");
+pub async fn handle_chat_start(config: &AppConfig, memory_store: &MemoryStore) {
+    let Some((_current_proxy, proxy_config, _proxy)) = get_active_proxy(&config, "start") else {
         return;
     };
 
@@ -27,30 +26,12 @@ pub async fn handle_chat_start(config: &AppConfig) {
         return;
     };
 
-    match proxy.is_running() {
-        Ok(false) => {
-            print_error(&format!(
-                "Proxy {} (platform: {}) is offline. Please run proxy before.",
-                current_proxy, proxy_config.platform
-            ));
-            return;
-        }
-
-        Err(e) => {
-            error!(error = ?e, "Failed to check proxy status");
-            print_error(&format!("Failed to check proxy. Please try again"));
-            return;
-        }
-
-        Ok(true) => {}
-    }
-
     let api_key = match proxy_config.api_key.as_deref() {
         None => String::from(""),
         Some(v) => v.to_string(),
     };
 
-    let mut session = match create_session(&store_config).await {
+    let mut session = match create_session(&memory_store).await {
         Ok(s) => s,
         Err(e) => {
             error!(error = ?e, "Failed to create session");
@@ -59,7 +40,7 @@ pub async fn handle_chat_start(config: &AppConfig) {
         }
     };
 
-    let mut agent = create_chat_agent(proxy_config.port, api_key, model_name);
+    let mut agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
     term.clear_screen().unwrap_or_else(|e| {
         print_error(&format!("Failed to init console. Cause: {}", e));
     });

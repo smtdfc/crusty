@@ -15,7 +15,7 @@ pub enum PluginCommands {
     },
 }
 
-pub fn handle_plugin_install(path: &String) {
+pub fn handle_plugin_install(path: &str) {
     let mut config = match AppConfig::load() {
         Ok(cfg) => cfg,
         Err(e) => {

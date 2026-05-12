@@ -29,7 +29,7 @@ impl AIProxy for _9RouterAIProxy {
 
         match TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
             Ok(_) => Ok(true),
-            Err(e) => Ok(false),
+            Err(_e) => Ok(false),
         }
     }
 

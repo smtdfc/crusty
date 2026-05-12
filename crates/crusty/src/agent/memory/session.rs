@@ -1,27 +1,21 @@
-use std::sync::Arc;
-
 use rig::message::Message;
 use sqlx::Database;
 use tracing::trace;
 use uuid::Uuid;
 
 use crate::{
-    agent::memory::{
-        context::save_message,
-        store::{MemoryStore, get_store},
-    },
-    config::store::StoreConfig,
+    agent::memory::{context::save_message, store::MemoryStore},
     exceptions::crusty::CrustyError,
 };
 
-pub struct Session {
+pub struct Session<'a> {
     pub session_id: String,
-    pub store: Arc<MemoryStore>,
+    pub store: &'a MemoryStore,
     pub history: Vec<Message>,
 }
 
-impl Session {
-    pub fn new(id: String, store: Arc<MemoryStore>) -> Self {
+impl<'a> Session<'a> {
+    pub fn new(id: String, store: &'a MemoryStore) -> Self {
         Self {
             session_id: id,
             history: vec![],
@@ -64,14 +58,10 @@ impl Session {
 pub trait MemoryDatabase: Database {}
 impl<T: Database> MemoryDatabase for T {}
 
-pub async fn create_session(store_config: &StoreConfig) -> Result<Session, CrustyError> {
+pub async fn create_session(store: &MemoryStore) -> Result<Session<'_>, CrustyError> {
     let session_id = Uuid::new_v4().to_string();
-    let store = get_store(&store_config).await?;
+    let session = Session::new(session_id.clone(), &store);
+    trace!("Session {} created", session_id);
 
-    let session = Session::new(session_id.clone(), Arc::new(store));
-    trace!(
-        "Session {} created with store type {}",
-        session_id, store_config.store_type
-    );
     Ok(session)
 }

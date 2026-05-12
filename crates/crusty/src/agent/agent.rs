@@ -25,7 +25,7 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
     pub async fn chat<F>(
         &mut self,
         prompt: &str,
-        session: &mut Session,
+        session: &mut Session<'_>,
         mut on_message: F,
     ) -> Result<(), CrustyError>
     where
@@ -69,9 +69,9 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
 
 pub fn create_chat_agent(
     port: u64,
-    api_key: String,
-    model: String,
-) -> ChatAgent<impl rig::completion::CompletionModel> {
+    api_key: &str,
+    model: &str,
+) -> ChatAgent<impl rig::completion::CompletionModel + use<>> {
     // let http_client = reqwest::Client::new();
     let client = openai::Client::builder()
         .api_key(api_key)
@@ -81,7 +81,7 @@ pub fn create_chat_agent(
 
     let agent = client
         .expect("Cannot create agent")
-        .agent(&model)
+        .agent(model)
         .preamble(SYSTEM_PROMPT)
         .build();
 
