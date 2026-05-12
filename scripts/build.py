@@ -1,130 +1,106 @@
 import json
-import os
 import argparse
-from pathlib import Path
 import subprocess
 import shutil
-from typing import Any
+from pathlib import Path
 
-
+# Updated comprehensive map
 TARGET_MAP = {
-    # Windows
-    "x86_64-pc-windows-msvc": {
-        "os": "windows",
-        "arch": "x86_64",
-        "ext": ".dll",
-        "lib_prefix": ""
-    },
-    "aarch64-pc-windows-msvc": {
-        "os": "windows",
-        "arch": "aarch64",
-        "ext": ".dll",
-        "lib_prefix": ""
-    },
-
-    # Linux
-    "x86_64-unknown-linux-gnu": {
-        "os": "linux",
-        "arch": "x86_64",
-        "ext": ".so",
-        "lib_prefix": "lib"
-    },
-    "aarch64-unknown-linux-gnu": {
-        "os": "linux",
-        "arch": "aarch64",
-        "ext": ".so",
-        "lib_prefix": "lib"
-    },
-
-    # macOS
-    "aarch64-apple-darwin": {
-        "os": "macos",
-        "arch": "aarch64",
-        "ext": ".dylib",
-        "lib_prefix": "lib"
-    },
-    "x86_64-apple-darwin": {
-        "os": "macos",
-        "arch": "x86_64",
-        "ext": ".dylib",
-        "lib_prefix": "lib"
-    }
+    "x86_64-pc-windows-msvc": {"os": "windows", "arch": "x86_64", "ext": ".dll", "lib_prefix": ""},
+    "aarch64-pc-windows-msvc": {"os": "windows", "arch": "aarch64", "ext": ".dll", "lib_prefix": ""},
+    "x86_64-unknown-linux-gnu": {"os": "linux", "arch": "x86_64", "ext": ".so", "lib_prefix": "lib"},
+    "aarch64-unknown-linux-gnu": {"os": "linux", "arch": "aarch64", "ext": ".so", "lib_prefix": "lib"},
+    "aarch64-apple-darwin": {"os": "macos", "arch": "aarch64", "ext": ".dylib", "lib_prefix": "lib"},
+    "x86_64-apple-darwin": {"os": "macos", "arch": "x86_64", "ext": ".dylib", "lib_prefix": "lib"},
 }
-
-cwd = Path.cwd()
-plugin_decl_file = cwd / "plugin.crusty.json"
-plugin_dist = cwd / "dist"
-plugin_metdata_file = plugin_dist / "metadata.json"
-
-data: dict[str, str] | None = None
-with open(plugin_decl_file, "r") as f:
-    data = json.load(f)
 
 
 def get_workspace_target_dir() -> Path:
     try:
         cmd = ["cargo", "metadata", "--format-version", "1", "--no-deps"]
-        result = subprocess.check_output(cmd, shell=True, text=True)
-        data = json.loads(result)
-        return Path(data["target_directory"])
-    except Exception as e:
-        return Path.cwd().parent.parent / "target"
+        # Use shell=False for better argument handling in CI
+        result = subprocess.check_output(cmd, text=True)
+        return Path(json.loads(result)["target_directory"])
+    except:
+        return Path.cwd().parents[1] / "target"
 
 
-workspace_target = get_workspace_target_dir()
+def create_dist(data, target_triple):
+    info = TARGET_MAP.get(target_triple)
+    if not info:
+        print(f"Target {target_triple} not supported in TARGET_MAP")
+        return
 
+    dist_dir = Path.cwd() / "dist"
+    dist_dir.mkdir(exist_ok=True)
 
-def create_dist(data: Any, target_triple: str) -> None:
-    Path.mkdir(plugin_dist, exist_ok=True)
-    info = TARGET_MAP.get(target_triple, {
-        "ext": ".so",
-        "lib_prefix": "lib"
-    })
+    package_name = data.get("package")
+    file_name = f"{info['lib_prefix']}{package_name}{info['ext']}"
 
-    bin_name = data.get("package")
-    file_name = f"{info['lib_prefix']}{bin_name}{info['ext']}"
+    # 1. Prepare metadata to match Rust Structs
+    metadata = {
+        "name": data.get("name"),
+        "id": data.get("id"),
+        "version": data.get("version"),
+        "platforms": [{
+            "os": info["os"],
+            "arch": info["arch"],
+            "file": file_name
+        }],
+        "features": data.get("features", [])
+    }
+
+    with open(dist_dir / "metadata.json", "w", encoding="utf-8") as f:
+        json.dump(metadata, f, indent=4)
+
+    # 2. Locate and copy binary
     workspace_target = get_workspace_target_dir()
     source_path = workspace_target / target_triple / "release" / file_name
-    dest_path = plugin_dist / file_name
+    dest_path = dist_dir / file_name
 
-    if dest_path.exists():
-        shutil.copy2(source_path, dest_path)
-        print(f"✅ Copied file at: {source_path} -> {dest_path}")
-        success = True
+    # FIX: Initialize success variable properly
+    success = False
+
+    # Check both exact name and lib_prefix variant
+    possible_sources = [source_path, source_path.parent / f"lib{file_name}"]
+
+    for src in possible_sources:
+        if src.exists():
+            shutil.copy2(src, dest_path)
+            print(f"Successfully copied: {src.name}")
+            success = True
+            break
 
     if not success:
-        print(f"File not found at: {source_path}")
-
-    data["platforms"] = [
-        {
-            "os": info.get("os"),
-            "arch": info.get("arch"),
-            "file": dest_path.name
-        }
-    ]
-
-    with open(plugin_metdata_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
+        print(f"Error: Could not find build output at {source_path}")
+        exit(1)
 
 
-parser = argparse.ArgumentParser(
-    description="Crusty Plugin build script")
-parser.add_argument("-t", "--target", type=str,
-                    default="x86_64-pc-windows-msvc", help="Build target")
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--target",
+                        default="x86_64-pc-windows-msvc")
+    parser.add_argument("--cross", action="store_true")
+    args = parser.parse_args()
 
+    # Load local plugin config
+    config_path = Path("plugin.crusty.json")
+    if not config_path.exists():
+        print("plugin.crusty.json not found")
+        exit(1)
 
-build_tool = "cross" if getattr(args, 'cross', False) else "cargo"
+    with open(config_path, "r") as f:
+        data = json.load(f)
 
-result = subprocess.run([
-    build_tool, "build",
-    "--target", args.target,
-    "--release"
-], shell=True)
+    # Execute Build
+    tool = "cross" if args.cross else "cargo"
+    # Ensure command is a list for robust subprocess execution
+    build_cmd = [tool, "build", "--target", args.target, "--release"]
 
+    print(f"Running: {' '.join(build_cmd)}")
+    result = subprocess.run(build_cmd)
 
-if result.returncode == 0:
-    create_dist(data, args.target)
-    print("🚀 Build và package successful !")
-else:
-    print("💥 Build failed")
+    if result.returncode == 0:
+        create_dist(data, args.target)
+    else:
+        exit(result.returncode)
