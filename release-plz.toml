@@ -9,14 +9,6 @@ pr_draft = false
 protect_breaking_commits = true
 
 
-[workspace.package_config]
-include = [
-    "src/**/*",
-    "Cargo.toml",
-    "plugin.crusty.json"
-]
-
-
 [changelog]
 commit_parsers = [
   { message = "^feat", group = "Features" },
