@@ -1,8 +1,13 @@
 [workspace]
 publish = false        
 release_always = true 
-allow_major_bump = false
-include = ["crates/**"]
+pr_labels = ["release"]
+custom_major_increment_regex = "a^"
+git_tag_enable = true
+git_release_enable = true
+pr_draft = false
+protect_breaking_commits = true
+
 
 [workspace.package_config]
 include = [
@@ -17,11 +22,5 @@ commit_parsers = [
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
   { message = "^perf", group = "Performance" },
-
-  { message = "^refactor", skip = true },
-  { message = "^style", skip = true },
-  { message = "^docs", skip = true },
-  { message = "^test", skip = true },
-  { message = "^chore", skip = true },
-  { message = "^ci", skip = true },
+  {skip = true}
 ]
