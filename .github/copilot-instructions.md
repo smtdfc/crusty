@@ -5,7 +5,7 @@
 All commit messages **MUST** follow the **Conventional Commits** specification. This is mandatory for the automated release system to calculate versions and generate changelogs correctly.
 
 **Structure:**
-`<type>[optional scope]: <description>`
+`<type>(scope): <description>`
 
 ### 2. Commit Types
 
@@ -41,7 +41,7 @@ Use a `scope` to identify which part of the workspace is affected:
 - **Logic Check:** Does this change logic? If yes -> Use `feat` or `fix`.
 - **Interface Check:** Is the `common` crate modified? If yes -> Evaluate if it's a `BREAKING CHANGE`.
 - **Formatting:** Use imperative, present tense (e.g., "add" not "added"), start with lowercase, and no period at the end.
-- Good `feat: add logging`
+- Good `feat(crusty): add logging`
 - Bad `Feat: Added some logging.`
 
 ---
