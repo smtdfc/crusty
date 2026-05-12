@@ -8,26 +8,48 @@ from typing import Any
 
 
 TARGET_MAP = {
+    # Windows
     "x86_64-pc-windows-msvc": {
         "os": "windows",
         "arch": "x86_64",
         "ext": ".dll",
         "lib_prefix": ""
     },
+    "aarch64-pc-windows-msvc": {
+        "os": "windows",
+        "arch": "aarch64",
+        "ext": ".dll",
+        "lib_prefix": ""
+    },
+
+    # Linux
     "x86_64-unknown-linux-gnu": {
         "os": "linux",
         "arch": "x86_64",
         "ext": ".so",
         "lib_prefix": "lib"
     },
+    "aarch64-unknown-linux-gnu": {
+        "os": "linux",
+        "arch": "aarch64",
+        "ext": ".so",
+        "lib_prefix": "lib"
+    },
+
+    # macOS
     "aarch64-apple-darwin": {
         "os": "macos",
         "arch": "aarch64",
         "ext": ".dylib",
         "lib_prefix": "lib"
+    },
+    "x86_64-apple-darwin": {
+        "os": "macos",
+        "arch": "x86_64",
+        "ext": ".dylib",
+        "lib_prefix": "lib"
     }
 }
-
 
 cwd = Path.cwd()
 plugin_decl_file = cwd / "plugin.crusty.json"
