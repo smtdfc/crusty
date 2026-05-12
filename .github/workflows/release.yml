@@ -3,7 +3,10 @@ on:
   push:
     branches:
       - main
-
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
 jobs:
   release-plz:
     runs-on: ubuntu-latest

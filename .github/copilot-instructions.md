@@ -1,66 +1,65 @@
-## Guide: Semantic Versioning & Commit Standards
+You are a Git expert. When generating commit messages, you MUST comply 100% with the following rules. No exceptions. No creative deviations.
 
-### 1. The Golden Rule
+1. MANDATORY STRUCTURE
+   <type>(<scope>): <description>
 
-All commit messages **MUST** follow the **Conventional Commits** specification. This is mandatory for the automated release system to calculate versions and generate changelogs correctly.
+2. COMMIT TYPES & RELEASE MAPPING
+   feat: A new feature (Minor release)
 
-**Structure:**
-`<type>(scope): <description>`
+fix: A bug fix (Patch release)
 
-### 2. Commit Types
+perf: Performance improvement (Patch release)
 
-Select the appropriate `type` based on the nature of the change:
+refactor: Code change that neither fixes a bug nor adds a feature (No release)
 
-| Type           | Meaning                               | Release Type       |
-| -------------- | ------------------------------------- | ------------------ |
-| **`feat`**     | A new feature                         | **Minor** (v1.1.0) |
-| **`fix`**      | A bug fix                             | **Patch** (v1.0.1) |
-| **`perf`**     | Performance improvement               | **Patch** (v1.0.1) |
-| **`refactor`** | Code change (no fix/feature)          | None               |
-| **`docs`**     | Documentation only                    | None               |
-| **`style`**    | Formatting, missing semi-colons, etc. | None               |
-| **`chore`**    | Maintenance/Build tasks               | None               |
+docs: Documentation only (No release)
 
-### 3. Breaking Changes
+style: Formatting, missing semi-colons, etc. (No release)
 
-If a change modifies the `Common Crate` interface in a way that breaks compatibility (ABI/API changes), you **MUST** add an **`!`** after the type or include `BREAKING CHANGE:` in the footer.
+chore: Maintenance, build tasks, gitignore updates (No release)
 
-- **Example:** `feat(common)!: rename PluginMod to IPlugin`
-- **Result:** Triggers a **Major** release (v1.x.x -> v2.0.0).
+3. SCOPING RULES
+   Analyze the changed files to determine the correct scope:
 
-### 4. Scoping
+(plugin): Changes to the shared interface/ABI.
 
-Use a `scope` to identify which part of the workspace is affected:
+(crusty): Changes to the core and main executable.
 
-- `(plugin)`: Changes to the shared interface/ABI for plugin.
-- `(crusty)`: Changes to the core and main executable.
-- `(<plugin-name>)`: Changes to a specific plugin.
+(<plugin-name>): Changes to a specific plugin (e.g., (weather-plugin)).
 
-### 5. Copilot Pre-Commit Checklist:
+4. BREAKING CHANGES (CRITICAL)
+   If the change modifies the common crate in a way that breaks compatibility (ABI/API changes), you MUST add an ! after the type.
 
-- **Logic Check:** Does this change logic? If yes -> Use `feat` or `fix`.
-- **Interface Check:** Is the `common` crate modified? If yes -> Evaluate if it's a `BREAKING CHANGE`.
-- **Formatting:** Use imperative, present tense (e.g., "add" not "added"), start with lowercase, and no period at the end.
-- Good `feat(crusty): add logging`
-- Bad `Feat: Added some logging.`
+Example: feat(common)!: rename PluginMod to IPlugin
 
-### 6. Skip CI Protocol
+5. [SKIP CI] PROTOCOL
+   You MUST append [skip ci] to the end of the description if:
 
-When changes don't need to trigger the Pipeline (build, test, release), add [skip ci] to the end of the commit description or body.
+Changes only affect README.md, docs/ folders, or code comments.
 
-Suitable for:
+Changes only affect hidden files (e.g., .gitignore, .editorconfig).
 
-- Correcting spelling or formatting errors in the README.md file or documentation (docs).
-- Changing comments in code without changing the logic.
-- Updating hidden files unrelated to the build (e.g., .gitignore, .editorconfig).
+Example: docs: fix typo in readme [skip ci]
 
-Example structure for Copilot:
+6. PRE-COMMIT CHECKLIST (GRAMMAR & STYLE)
+   Imperative Mood: Use "add", NOT "added" or "adds".
 
-`docs: update installation steps [skip ci]`
-`chore(crusty): update .gitignore [skip ci]`
+Lowercase: Start the description with a lowercase letter.
 
-### Technical Context for Copilot
+No Period: Do NOT put a period at the end of the sentence.
 
-- **Language:** Rust
-- **Architecture:** Plugin-based using `abi_stable`.
-- **Versioning:** Do **not** manually update `version` fields in `Cargo.toml`. The `semantic-release` bot handles this automatically based on commit messages.
+Logic Check: If logic is changed, you MUST use feat or fix.
+
+CORRECT EXAMPLES:
+feat(crusty): add logging system
+
+fix(weather): resolve api timeout issue
+
+docs: update install guide [skip ci]
+
+refactor(plugin)!: change base trait structure
+
+FORBIDDEN EXAMPLES (DO NOT DO THIS):
+Fixed bug in main (Wrong format, wrong tense)
+
+Feat(Crusty): Add logging. (Capitalized, has period)
