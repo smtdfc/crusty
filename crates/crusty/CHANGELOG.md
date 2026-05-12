@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/smtdfc/crusty/compare/crusty-v0.1.5...crusty-v0.1.6) - 2026-05-12
+
+### Other
+
+- update build workflow for R2 deployment and enhance dependency management
+- update build process and remove deprecated plugin files
+
 ## [0.1.5](https://github.com/smtdfc/crusty/compare/crusty-v0.1.4...crusty-v0.1.5) - 2026-05-12
 
 ### Added
