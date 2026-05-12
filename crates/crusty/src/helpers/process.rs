@@ -10,7 +10,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::config::config::AppConfig;
-#[cfg(target_os = "windows")]
 use crate::exceptions::crusty::CrustyError;
 
 pub static NPM_CMD: &str = if cfg!(target_os = "windows") {
@@ -28,7 +27,6 @@ pub static NPX_CMD: &str = if cfg!(target_os = "windows") {
 // 0x08000000 -> CREATE_NO_WINDOW
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-#[cfg(target_os = "windows")]
 pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, CrustyError> {
     let mut command = Command::new(program);
     command

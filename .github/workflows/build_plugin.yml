@@ -49,10 +49,11 @@ jobs:
           if [ "${{ matrix.use_cross }}" = "true" ]; then
             CROSS_FLAG="--cross"
           fi
-          python scripts/build.py --out ./dist $CROSS_FLAG --target ${{ matrix.target }}
+
+          python scripts/build_all.py $CROSS_FLAG --target ${{ matrix.target }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: plugin-${{ matrix.target }}
-          path: dist/
+          name: plugins-all-${{ matrix.target }}
+          path: "**/dist/*"

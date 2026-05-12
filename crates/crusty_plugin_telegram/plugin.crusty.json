@@ -1,0 +1,9 @@
+{
+    "id": "@crusty/telegram",
+    "name": "Crusty Telegram Plugin",
+    "description": "Plugin Telegram for Crusty Agent",
+    "package": "crusty_plugin_telegram",
+    "features": [
+        "chat"
+    ]
+}
