@@ -32,7 +32,11 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
         .interact_text()
         .unwrap();
 
-    let proxy = _9RouterAIProxy { port };
+    let proxy = _9RouterAIProxy {
+        host,
+        port,
+        is_local,
+    };
     match proxy.is_install() {
         Ok(false) => {
             print_info("Installing 9router ...");
@@ -55,13 +59,13 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
             Open: http://{}:{}/dashboard/combos in your browser (Log in if prompted)
             Add a combo box named crusty_combo so that crusty can function.
         ",
-        host, port
+        &proxy.host, &proxy.port
     ));
 
     Ok(AIProxyConfig {
         platform: format!("9router"),
         is_local,
-        host,
+        host: proxy.host,
         port,
         api_key: None,
         current_model: Some(format!("crusty_combo")),

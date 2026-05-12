@@ -16,7 +16,9 @@ use crate::{
 };
 
 pub struct _9RouterAIProxy {
+    pub host: String,
     pub port: u64,
+    pub is_local: bool,
 }
 
 impl AIProxy for _9RouterAIProxy {
@@ -34,7 +36,7 @@ impl AIProxy for _9RouterAIProxy {
     }
 
     fn get_url(&self) -> String {
-        format!("localhost:{}", self.port)
+        format!("http://{}:{}", self.host, self.port)
     }
 
     fn start(&self) -> Result<(), CrustyError> {
@@ -80,5 +82,9 @@ impl AIProxy for _9RouterAIProxy {
     fn install(&self) -> Result<(), CrustyError> {
         install_npm_package("9router", true)?;
         Ok(())
+    }
+
+    fn get_dashboard_url(&self) -> String {
+        format!("http://{}:{}/dashboard", self.host, self.port)
     }
 }

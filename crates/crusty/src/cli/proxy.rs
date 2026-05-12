@@ -101,3 +101,44 @@ pub fn handle_proxy_stop() {
         }
     }
 }
+
+pub fn handle_proxy_dashboard() {
+    show_loading("Preparing ...");
+    let config = match AppConfig::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            print_error(&format!("{}", e));
+            return;
+        }
+    };
+
+    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "launch dashboard")
+    else {
+        return;
+    };
+
+    match proxy.is_running() {
+        Ok(t) => {
+            if !t {
+                print_error(&format!(
+                    "Proxy {} (platform: {}) on port {} is not running.",
+                    current_proxy, proxy_config.platform, proxy_config.port
+                ));
+
+                return;
+            }
+        }
+        Err(e) => {
+            error!(error = ?e, "Failed to launch proxy dashboard");
+            print_error(&format!(
+                "Cannot check status of proxy {} (platform: {}) on port {}. Please check log for details.",
+                current_proxy, proxy_config.platform, proxy_config.port
+            ));
+        }
+    }
+
+    match opener::open(proxy.get_dashboard_url()) {
+        Ok(_) => (),
+        Err(e) => eprintln!("Error: {}", e),
+    }
+}

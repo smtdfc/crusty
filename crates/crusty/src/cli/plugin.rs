@@ -9,7 +9,9 @@ use crate::{
 
 #[derive(Subcommand)]
 pub enum PluginCommands {
+    /// Install a plugin from a local package or manifest path
     Install {
+        /// Path to the plugin package or manifest file
         #[arg(short, long)]
         path: String,
     },
