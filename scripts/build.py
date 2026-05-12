@@ -86,8 +86,8 @@ if __name__ == "__main__":
     # Load local plugin config
     config_path = Path("plugin.crusty.json")
     if not config_path.exists():
-        print("plugin.crusty.json not found")
-        exit(1)
+        print("plugin.crusty.json not found. Skip")
+        exit(0)
 
     with open(config_path, "r") as f:
         data = json.load(f)
