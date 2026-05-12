@@ -51,10 +51,24 @@ cargo run -- start
 # Or: crusty start
 ```
 
+To jump directly into chat mode and skip the menu:
+
+```bash
+cargo run -- start --chat
+# Or: crusty start --chat
+```
+
 **This command will:**
 
 - Display a welcome screen and open the chat interface.
 - Allow you to type your message and press Enter to chat with the AI.
+
+### 7. Proxy dashboard
+
+```bash
+cargo run -- proxy dashboard
+# Or: crusty proxy dashboard
+```
 
 ## 🤝 How to Contribute
 
