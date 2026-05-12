@@ -44,7 +44,20 @@ Use a `scope` to identify which part of the workspace is affected:
 - Good `feat(crusty): add logging`
 - Bad `Feat: Added some logging.`
 
----
+### 6. Skip CI Protocol
+
+When changes don't need to trigger the Pipeline (build, test, release), add [skip ci] to the end of the commit description or body.
+
+Suitable for:
+
+- Correcting spelling or formatting errors in the README.md file or documentation (docs).
+- Changing comments in code without changing the logic.
+- Updating hidden files unrelated to the build (e.g., .gitignore, .editorconfig).
+
+Example structure for Copilot:
+
+`docs: update installation steps [skip ci]`
+`chore(crusty): update .gitignore [skip ci]`
 
 ### Technical Context for Copilot
 
