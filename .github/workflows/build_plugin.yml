@@ -1,10 +1,8 @@
-name: Multi-Plugin Build
+name: Multi-Plugin Build & Ship to R2
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  release:
+    types: [published]
 
 jobs:
   build-and-pack:
@@ -18,11 +16,9 @@ jobs:
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             use_cross: false
-
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             use_cross: false
-
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             use_cross: true
@@ -32,6 +28,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Parse Name and Version
+        id: parse
+        shell: bash
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          PKG_NAME=$(echo $TAG | sed 's/-v[0-9].*//')
+          VERSION=$(echo $TAG | grep -o 'v[0-9].*')
+
+          echo "pkg=$PKG_NAME" >> $GITHUB_OUTPUT
+          echo "ver=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -45,15 +63,25 @@ jobs:
       - name: Run Build Manager
         shell: bash
         run: |
+          P_NAME="${{ steps.parse.outputs.pkg }}"
           CROSS_FLAG=""
           if [ "${{ matrix.use_cross }}" = "true" ]; then
             CROSS_FLAG="--cross"
           fi
 
-          python scripts/build_all.py $CROSS_FLAG --target ${{ matrix.target }}
+          cd ./crates/$P_NAME
+          python ../../scripts/build.py $CROSS_FLAG --target ${{ matrix.target }}
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+          zip -j ../../${P_NAME}-${{ matrix.target }}.zip dist/*
+
+      - name: Upload Zip to R2
+        uses: jakejarvis/s3-sync-action@master
         with:
-          name: plugins-all-${{ matrix.target }}
-          path: "**/dist/*"
+          args: --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --acl public-read --exclude "*" --include "*.zip"
+        env:
+          AWS_S3_BUCKET: "crusty-plugins"
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_REGION: "auto"
+          SOURCE_DIR: "."
+          DEST_DIR: "releases/${{ steps.parse.outputs.pkg }}/${{ steps.parse.outputs.ver }}"
