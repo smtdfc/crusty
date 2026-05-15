@@ -34,3 +34,5 @@ uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = "0.4"
 thiserror = "1.0"
 opener = "0.7"
+moka = { version = "0.12", features = ["sync","future" ] }
+async-trait = "0.1.89"

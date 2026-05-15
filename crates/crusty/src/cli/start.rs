@@ -6,22 +6,14 @@ use tracing::error;
 use crate::{
     agent::memory::{session::create_session, store::get_store},
     cli::{chat::handle_chat_start, config::handle_config, utils::get_active_proxy},
-    config::{config::AppConfig, plugin::PluginConfig},
+    config::{config::GLOBAL_CONFIG, plugin::PluginConfig},
     helpers::tui::{print_banner, print_error, show_loading, show_menu},
     plugin::manager::{load_all_plugin, run_all_plugin},
 };
 
 pub async fn handle_start(jump_to_chat: bool) {
     show_loading("Preparing ...");
-    let config = match AppConfig::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            error!(error = ?e, "Failed to load config");
-            print_error(&format!("Failed to load config"));
-
-            return;
-        }
-    };
+    let config = GLOBAL_CONFIG.read().unwrap();
     let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, "start") else {
         return;
     };
@@ -93,7 +85,7 @@ pub async fn handle_start(jump_to_chat: bool) {
     );
 
     if jump_to_chat {
-        handle_chat_start(&config, &memory_store).await;
+        handle_chat_start(&memory_store).await;
         return;
     }
 
@@ -103,7 +95,7 @@ pub async fn handle_start(jump_to_chat: bool) {
         };
 
         if opt == 0 {
-            handle_chat_start(&config, &memory_store).await;
+            handle_chat_start(&memory_store).await;
         } else if opt == 1 {
             handle_config();
         }

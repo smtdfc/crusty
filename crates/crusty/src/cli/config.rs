@@ -1,19 +1,6 @@
-use tracing::error;
-
-use crate::{
-    config::config::AppConfig,
-    helpers::tui::{print_error, show_loading},
-};
+use crate::{config::config::GLOBAL_CONFIG, helpers::tui::show_loading};
 
 pub fn handle_config() {
     show_loading("Preparing ...");
-    let _config = match AppConfig::load() {
-        Ok(cfg) => cfg,
-        Err(e) => {
-            error!(error = ?e, "Failed to load config");
-            print_error(&format!("Failed to load config"));
-
-            return;
-        }
-    };
+    let config = GLOBAL_CONFIG.read().unwrap();
 }

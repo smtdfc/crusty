@@ -7,13 +7,13 @@ use futures_util::stream::StreamExt;
 use rig::agent::Agent;
 use rig::agent::MultiTurnStreamItem;
 use rig::client::CompletionClient;
+use rig::completion::CompletionModel;
 use rig::message::Message;
 use rig::providers::openai;
 use rig::streaming::StreamedAssistantContent;
 use rig::streaming::StreamingChat;
 
 use tracing::info;
-use tracing::trace;
 pub struct ChatAgent<T: rig::completion::CompletionModel> {
     agent: Agent<T>,
 }
@@ -22,16 +22,26 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
     pub fn new(agent: Agent<T>) -> Self {
         Self { agent: agent }
     }
+}
 
-    pub async fn chat<F>(
+#[async_trait::async_trait]
+pub trait AnyAgent: Send + Sync {
+    async fn chat<'a>(
         &mut self,
         prompt: &str,
-        session: &mut Session<'_>,
-        mut on_message: F,
-    ) -> Result<(), CrustyError>
-    where
-        F: FnMut(ChatMessage) + Send + Sync + 'static,
-    {
+        session: &mut Session<'a>,
+        mut on_message: Box<dyn FnMut(ChatMessage) + Send + Sync>,
+    ) -> Result<(), CrustyError>;
+}
+
+#[async_trait::async_trait]
+impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
+    async fn chat<'a>(
+        &mut self,
+        prompt: &str,
+        session: &mut Session<'a>,
+        mut on_message: Box<dyn FnMut(ChatMessage) + Send + Sync>,
+    ) -> Result<(), CrustyError> {
         session
             .add_message("user", Message::user(prompt.to_string()))
             .await?;
@@ -68,11 +78,7 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
     }
 }
 
-pub fn create_chat_agent(
-    port: u64,
-    api_key: &str,
-    model: &str,
-) -> ChatAgent<impl rig::completion::CompletionModel + use<>> {
+pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAgent> {
     // let http_client = reqwest::Client::new();
     let client = openai::Client::builder()
         .api_key(api_key)
@@ -90,5 +96,5 @@ pub fn create_chat_agent(
         "Agent initialization successful. AI Proxy port: {}; Model: {}",
         port, model
     );
-    ChatAgent::new(agent)
+    Box::new(ChatAgent::new(agent))
 }

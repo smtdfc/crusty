@@ -5,7 +5,7 @@ use crate::{
         message::ChatMessage,
     },
     cli::utils::get_active_proxy,
-    config::config::AppConfig,
+    config::config::GLOBAL_CONFIG,
     helpers::tui::{print_error, show_loading},
 };
 use console::{Term, style};
@@ -13,7 +13,8 @@ use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
 use tracing::error;
 
-pub async fn handle_chat_start(config: &AppConfig, memory_store: &MemoryStore) {
+pub async fn handle_chat_start(memory_store: &MemoryStore) {
+    let config = GLOBAL_CONFIG.read().unwrap();
     let Some((_current_proxy, proxy_config, _proxy)) = get_active_proxy(&config, "start") else {
         return;
     };
@@ -57,21 +58,23 @@ pub async fn handle_chat_start(config: &AppConfig, memory_store: &MemoryStore) {
                 let pb = show_loading("Agent: Thinking ...");
                 let mut first_chunk = true;
 
-                agent
-                    .chat(&prompt, &mut session, move |m| {
-                        if first_chunk {
-                            pb.finish_and_clear();
-                            print!("{} ", style("Agent:").green().bold());
-                            first_chunk = false;
-                        }
+                let callback = Box::new(move |m| {
+                    if first_chunk {
+                        pb.finish_and_clear();
+                        print!("{} ", style("Agent:").green().bold());
+                        first_chunk = false;
+                    }
 
-                        match m {
-                            ChatMessage::TextMessage(chunk) => {
-                                print!("{}", chunk.content);
-                                std::io::stdout().flush().unwrap();
-                            }
+                    match m {
+                        ChatMessage::TextMessage(chunk) => {
+                            print!("{}", chunk.content);
+                            std::io::stdout().flush().unwrap();
                         }
-                    })
+                    }
+                });
+
+                agent
+                    .chat(&prompt, &mut session, callback)
                     .await
                     .unwrap_or_else(|e| {
                         error!(error = ?e, "Failed to load chat");

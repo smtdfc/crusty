@@ -3,11 +3,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::{LazyLock, RwLock};
+use tracing::error;
 
 use crate::config::ai_proxy::AIProxyConfig;
 use crate::config::plugin::PluginConfig;
 use crate::config::store::StoreConfig;
 use crate::exceptions::crusty::CrustyError;
+use crate::helpers::tui::print_error;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
@@ -89,3 +92,16 @@ impl AppConfig {
         self.ai_proxies.get(name).cloned()
     }
 }
+
+pub static GLOBAL_CONFIG: LazyLock<RwLock<AppConfig>> = LazyLock::new(|| {
+    let config = match AppConfig::load() {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!(error = ?e, "Failed to load config");
+            print_error(&format!("Failed to load config"));
+            panic!("");
+        }
+    };
+
+    RwLock::new(config)
+});
