@@ -6,7 +6,6 @@ custom_major_increment_regex = "a^"
 git_tag_enable = true
 git_release_enable = true
 pr_draft = false
-protect_breaking_commits = true
 
 
 [changelog]
