@@ -15,7 +15,7 @@ pub struct Plugin {
 #[repr(C)]
 #[derive(StableAbi)]
 pub struct ChatCallback {
-    pub ask: extern "C" fn(RString, RString),
+    pub ask: extern "C" fn(RString, RString, RString), // args: plugin id, session id, msg
 }
 
 #[repr(C)]

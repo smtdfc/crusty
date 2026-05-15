@@ -2,7 +2,7 @@ use std::{fs::File, path::Path};
 
 use serde::Deserialize;
 use std::io::BufReader;
-use tracing::trace;
+use tracing::{info, trace};
 
 use crate::exceptions::crusty::CrustyError;
 
@@ -52,7 +52,7 @@ pub fn read_metadata<P: AsRef<Path>>(file_path: P) -> Result<PluginMetadata, Cru
         ))
     })?;
 
-    trace!(
+    info!(
         "[Plugin] Read metadata file: {}",
         file_path.as_ref().display()
     );

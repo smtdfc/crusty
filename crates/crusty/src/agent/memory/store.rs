@@ -1,5 +1,5 @@
 use sqlx::AnyPool;
-use tracing::trace;
+use tracing::{info, trace};
 
 use crate::{config::store::StoreConfig, exceptions::crusty::CrustyError};
 
@@ -29,7 +29,7 @@ pub async fn get_store(store_config: &StoreConfig) -> Result<MemoryStore, Crusty
         .execute(&pool)
         .await?;
 
-        trace!(
+        info!(
             "Store {} at {} connected ",
             store_config.store_type, store_config.uri
         );

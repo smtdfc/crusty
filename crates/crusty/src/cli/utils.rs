@@ -1,4 +1,4 @@
-use tracing::trace;
+use tracing::{info, trace};
 
 use crate::{
     ai_proxy::ai_proxy::{AIProxy, get_proxy},
@@ -42,7 +42,7 @@ pub fn get_active_proxy(
         }
 
         Ok(_) => {
-            trace!("Proxy already installed, skipping...");
+            info!("Proxy already installed, skipping...");
         }
     }
 

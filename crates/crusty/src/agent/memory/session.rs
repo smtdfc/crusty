@@ -1,6 +1,6 @@
 use rig::message::Message;
 use sqlx::Database;
-use tracing::trace;
+use tracing::{info, trace};
 use uuid::Uuid;
 
 use crate::{
@@ -61,7 +61,7 @@ impl<T: Database> MemoryDatabase for T {}
 pub async fn create_session(store: &MemoryStore) -> Result<Session<'_>, CrustyError> {
     let session_id = Uuid::new_v4().to_string();
     let session = Session::new(session_id.clone(), &store);
-    trace!("Session {} created", session_id);
+    info!("Session {} created", session_id);
 
     Ok(session)
 }

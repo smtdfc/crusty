@@ -12,6 +12,7 @@ use rig::providers::openai;
 use rig::streaming::StreamedAssistantContent;
 use rig::streaming::StreamingChat;
 
+use tracing::info;
 use tracing::trace;
 pub struct ChatAgent<T: rig::completion::CompletionModel> {
     agent: Agent<T>,
@@ -85,7 +86,7 @@ pub fn create_chat_agent(
         .preamble(SYSTEM_PROMPT)
         .build();
 
-    trace!(
+    info!(
         "Agent initialization successful. AI Proxy port: {}; Model: {}",
         port, model
     );

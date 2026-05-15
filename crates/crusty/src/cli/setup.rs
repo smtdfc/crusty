@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use dialoguer::{Confirm, Input, theme::ColorfulTheme};
-use tracing::{error, trace};
+use tracing::{error, info, trace};
 
 use crate::{
     ai_proxy::{_9router::_9RouterAIProxy, ai_proxy::AIProxy},
@@ -49,7 +49,7 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
         }
 
         Ok(_) => {
-            trace!("Proxy already installed, skipping...");
+            info!("Proxy already installed, skipping...");
         }
     }
 

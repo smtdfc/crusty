@@ -2,7 +2,7 @@ use crate::{agent::memory::message::ChatRow, exceptions::crusty::CrustyError};
 use chrono::Utc;
 use rig::message::Message;
 use sqlx::{AnyPool, query, query_as};
-use tracing::trace;
+use tracing::{info, trace};
 
 pub async fn get_context(
     pool: &AnyPool,
@@ -30,7 +30,7 @@ pub async fn get_context(
         })
         .collect();
 
-    trace!(
+    info!(
         "Query message for session: {} with limit {}. Successful with {} message(s)",
         session_id,
         limit,
@@ -57,7 +57,7 @@ pub async fn save_message(
         .await
         .map_err(|e| CrustyError::AgentMemoryError(format!("Failed to query. Cause: {}", e)))?;
 
-    trace!(
+    info!(
         "Query save message for session: {} with role {}. Successful",
         session_id, role
     );

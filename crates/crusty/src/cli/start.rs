@@ -6,9 +6,9 @@ use tracing::error;
 use crate::{
     agent::memory::{session::create_session, store::get_store},
     cli::{chat::handle_chat_start, config::handle_config, utils::get_active_proxy},
-    config::config::AppConfig,
+    config::{config::AppConfig, plugin::PluginConfig},
     helpers::tui::{print_banner, print_error, show_loading, show_menu},
-    plugin::manager::PluginManager,
+    plugin::manager::{load_all_plugin, run_all_plugin},
 };
 
 pub async fn handle_start(jump_to_chat: bool) {
@@ -26,7 +26,6 @@ pub async fn handle_start(jump_to_chat: bool) {
         return;
     };
 
-    let mut plugin_manager = PluginManager::new();
     let mut is_proxy_online = false;
     // let theme = ColorfulTheme::default();
     // let term = Term::stdout();
@@ -55,8 +54,11 @@ pub async fn handle_start(jump_to_chat: bool) {
         Ok(true) => is_proxy_online = true,
     }
 
-    plugin_manager.load_all(&config.plugins);
-    plugin_manager.run_all();
+    // load and start all plugin
+    let plugins = config.plugins.clone();
+    let plugins_static: &'static Vec<PluginConfig> = Box::leak(Box::new(plugins));
+    load_all_plugin(&plugins_static);
+    run_all_plugin();
 
     let Some(ref store_config) = config.store else {
         print_error("Store not configured. Please setup your store.");

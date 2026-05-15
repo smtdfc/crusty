@@ -1,6 +1,6 @@
 use abi_stable::library::RootModule;
 use crusty_plugin::bridge::PluginRef;
-use tracing::trace;
+use tracing::{info, trace};
 
 use std::{
     fs,
@@ -83,6 +83,7 @@ pub fn install_plugin(path: &str, config: &mut AppConfig) -> Result<(), CrustyEr
         return CrustyError::PluginError(format!("Failed to copy content. Cause {:?}", e));
     })?;
 
-    trace!("[Plugin] Installed plugin {} (id: {})", path, id);
+    info!("[Plugin] Installed plugin {} (id: {})", path, id);
+    info!("Installed plugin {}", id);
     Ok(())
 }

@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use tracing::trace;
+use tracing::{info, trace};
 
 use crate::{
     ai_proxy::ai_proxy::AIProxy,
@@ -60,7 +60,7 @@ impl AIProxy for _9RouterAIProxy {
             match get_pids_by_port(self.port) {
                 Ok(pids) if !pids.is_empty() => {
                     save_pid("9router", pids[0])?;
-                    trace!("9router started");
+                    info!("9router started");
                     return Ok(());
                 }
                 _ => thread::sleep(Duration::from_millis(200)),
@@ -75,7 +75,7 @@ impl AIProxy for _9RouterAIProxy {
 
     fn stop(&self) -> Result<(), CrustyError> {
         stop_process_by_port(self.port)?;
-        trace!("9router stopped");
+        info!("9router stopped");
         Ok(())
     }
 
