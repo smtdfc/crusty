@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0](https://github.com/smtdfc/crusty/releases/tag/crusty_plugin-v0.1.0) - 2026-05-16
+
+### Features
+
+- add chrono dependency and enhance session management with async traits
+- add dotenv support and enhance plugin communication with session ID
+- Introduce CrustyError for better error handling across the application
+- enhance plugin system with chat functionality and configuration handling
+- implement plugin system with installation and metadata handling
+
+### Other
+
+- *(other)* Bump crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0
+- *(other)* Release crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0
+- *(other)* release
+- *(other)* Refactor Crusty Agent: Restructure project into crates, implement AI proxy functionality, and enhance CLI commands
+
 ## [0.1.0](https://github.com/smtdfc/crusty/releases/tag/crusty_plugin-v0.1.0) - 2026-05-10
 
 ### Other

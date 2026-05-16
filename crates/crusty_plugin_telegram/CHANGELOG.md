@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/smtdfc/crusty/releases/tag/crusty_plugin_telegram-v0.1.1) - 2026-05-16
+
+### Bug Fixes
+
+- *(crusty_plugin_telegram)* update author name in PluginInfo for Crusty Plugin Telegram
+- update author name in PluginInfo for Crusty Plugin Telegram
+- update author name in plugin info to reflect team attribution
+- update plugin version to use the package version from Cargo.toml
+
+### Features
+
+- add chrono dependency and enhance session management with async traits
+- add dotenv support and enhance plugin communication with session ID
+- enhance AIProxy with host and is_local fields; add dashboard URL functionality
+- Introduce CrustyError for better error handling across the application
+- restructure project to include new Telegram plugin and session management
+
+### Other
+
+- *(crusty_plugin_telegram)* bump version to 0.1.1
+- *(other)* Bump crusty_plugin_telegram v0.1.0
+- *(other)* Release crusty_plugin_telegram v0.1.0
+- *(other)* Release crusty_plugin_telegram v0.1.0
+- *(other)* Bump crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0
+- *(other)* Release crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0
+- *(crusty_plugin_telegram)* enhance plugin description for clarity and consistency in metadata
+- *(other)* standardize log message and improve message sending format in bot module
+- *(other)* update build workflow for R2 deployment and enhance dependency management
+- *(other)* update build process and remove deprecated plugin files
+
 ## [0.1.0](https://github.com/smtdfc/crusty/releases/tag/crusty_plugin_example-v0.1.0) - 2026-05-10
 
 ### Added
