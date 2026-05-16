@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v0.1.0 (2026-05-16)
 
+<csr-id-86a45774e74a849e020b50d2dd050547a677c9ca/>
+
 ### New Features
 
  - <csr-id-89b735188c3cf69fc9e54a2b2129c3d10088346a/> add chrono dependency and enhance session management with async traits
@@ -43,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 7 commits contributed to the release over the course of 6 calendar days.
+ - 8 commits contributed to the release over the course of 6 calendar days.
  - 6 days passed between releases.
  - 6 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -55,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0 ([`dfdcc19`](https://github.com/smtdfc/crusty/commit/dfdcc1926449e36945526195c1e7549b232195a1))
     - Add chrono dependency and enhance session management with async traits ([`89b7351`](https://github.com/smtdfc/crusty/commit/89b735188c3cf69fc9e54a2b2129c3d10088346a))
     - Add dotenv support and enhance plugin communication with session ID ([`11003bf`](https://github.com/smtdfc/crusty/commit/11003bfd3733d791d97957e723f51ce4650d8f0f))
     - Introduce CrustyError for better error handling across the application ([`c2f2c15`](https://github.com/smtdfc/crusty/commit/c2f2c154b9c9c29deb3ca68dbb939484f29e7336))

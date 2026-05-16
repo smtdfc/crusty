@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v0.1.0 (2026-05-16)
 
+<csr-id-34f6e7b34eb4fcc3fa03ed385b51d2cd51a3ad1e/>
+<csr-id-d84e5034a6ea14cc1f27ae8f197a284d6a641253/>
+<csr-id-0926ef92358c7078cf064115ba7c4d432d747506/>
+<csr-id-5f49518a9590fbae32695a94a89c15b1a4b0b44a/>
+
 ### Refactor
 
  - <csr-id-34f6e7b34eb4fcc3fa03ed385b51d2cd51a3ad1e/> enhance plugin description for clarity and consistency in metadata
@@ -60,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 9 commits contributed to the release over the course of 4 calendar days.
+ - 10 commits contributed to the release over the course of 4 calendar days.
  - 4 days passed between releases.
  - 9 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
@@ -72,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release crusty_plugin v0.1.0, crusty_plugin_telegram v0.1.0 ([`dfdcc19`](https://github.com/smtdfc/crusty/commit/dfdcc1926449e36945526195c1e7549b232195a1))
     - Update author name in plugin info to reflect team attribution ([`4bf81b3`](https://github.com/smtdfc/crusty/commit/4bf81b347057d1d845a263c032ae00d7388325b9))
     - Update plugin version to use the package version from Cargo.toml ([`00d8abd`](https://github.com/smtdfc/crusty/commit/00d8abdf45046341b134c2c173d985500a26523d))
     - Enhance plugin description for clarity and consistency in metadata ([`34f6e7b`](https://github.com/smtdfc/crusty/commit/34f6e7b34eb4fcc3fa03ed385b51d2cd51a3ad1e))
