@@ -1,6 +1,6 @@
 [package]
 name = "crusty"
-version = "0.1.14"
+version = "0.1.13"
 edition = "2024"
 
 [lib]
