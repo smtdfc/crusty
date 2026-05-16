@@ -32,6 +32,8 @@ enum Commands {
     /// Setup a new AI proxy platform (e.g., 9router)
     Setup,
 
+    Stop,
+
     /// Configure settings, models, and switch active proxies
     Config,
 
@@ -78,5 +80,7 @@ async fn main() {
         Commands::Plugin { sub } => match sub {
             PluginCommands::Install { path } => handle_plugin_install(path),
         },
+
+        _ => {}
     }
 }
