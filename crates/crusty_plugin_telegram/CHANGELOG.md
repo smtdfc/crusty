@@ -67,7 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 3 commits contributed to the release.
+ - 4 commits contributed to the release.
  - 2 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
 
@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Release crusty_plugin_telegram v0.1.0 ([`c0f7efe`](https://github.com/smtdfc/crusty/commit/c0f7efe12a31a233272fb7c2fc126443ccd6a56b))
     - Update author name in PluginInfo for Crusty Plugin Telegram ([`ee235fa`](https://github.com/smtdfc/crusty/commit/ee235fa1f03260107902cfc244cb9f5a155ce28d))
     - Release crusty_plugin_telegram v0.1.0 ([`f6ec9a4`](https://github.com/smtdfc/crusty/commit/f6ec9a4fc62faa182bd586915e34d2d8fa82138f))
     - Update author name in PluginInfo for Crusty Plugin Telegram ([`b6401e3`](https://github.com/smtdfc/crusty/commit/b6401e3425420e5858a4b1499a989d51809c2162))
