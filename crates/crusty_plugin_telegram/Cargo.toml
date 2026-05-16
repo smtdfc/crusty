@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 abi_stable = "0.11.3"
-crusty_plugin = { version = "0.1.0", path = "../plugin" }
+crusty_plugin = { version = "^0.1.0", path = "../plugin" }
 teloxide = { version = "0.17.0", features = ["macros"] }
 log = "0.4"
 pretty_env_logger = "0.5"
