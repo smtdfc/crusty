@@ -4,21 +4,21 @@ use crate::agent::message::TextMessage;
 use crate::agent::prompt::SYSTEM_PROMPT;
 use crate::exceptions::crusty::CrustyError;
 use futures_util::stream::StreamExt;
-use rig::agent::Agent;
-use rig::agent::MultiTurnStreamItem;
-use rig::client::CompletionClient;
-use rig::completion::CompletionModel;
-use rig::message::Message;
-use rig::providers::openai;
-use rig::streaming::StreamedAssistantContent;
-use rig::streaming::StreamingChat;
+use rig_core::agent::Agent;
+use rig_core::agent::MultiTurnStreamItem;
+use rig_core::client::CompletionClient;
+use rig_core::completion::CompletionModel;
+use rig_core::message::Message;
+use rig_core::providers::openai;
+use rig_core::streaming::StreamedAssistantContent;
+use rig_core::streaming::StreamingChat;
 
 use tracing::info;
-pub struct ChatAgent<T: rig::completion::CompletionModel> {
+pub struct ChatAgent<T: CompletionModel> {
     agent: Agent<T>,
 }
 
-impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
+impl<T: CompletionModel + 'static> ChatAgent<T> {
     pub fn new(agent: Agent<T>) -> Self {
         Self { agent: agent }
     }

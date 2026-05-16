@@ -9,7 +9,7 @@ use crusty_core::cli::start::handle_start;
 use crusty_core::logging::setup_logging;
 
 #[derive(Parser)]
-#[command(name = "crusty", about = "Crusty Agent CLI", version)]
+#[command(name = "crusty", about = "Crusty is an AI Agent built with Rust that integrates the AI proxy", version= env!("CARGO_PKG_VERSION"))]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

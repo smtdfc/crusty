@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rig::message::Message;
+use rig_core::message::{AssistantContent, Message, UserContent};
 use sqlx::Database;
 use tracing::info;
 use uuid::Uuid;
@@ -44,7 +44,7 @@ impl Session {
             Message::User { content } => content
                 .iter()
                 .map(|c| match c {
-                    rig::message::UserContent::Text(t) => t.text.as_str(),
+                    UserContent::Text(t) => t.text.as_str(),
                     _ => "",
                 })
                 .collect::<Vec<_>>()
@@ -53,7 +53,7 @@ impl Session {
             Message::Assistant { content, .. } => content
                 .iter()
                 .filter_map(|c| {
-                    if let rig::completion::AssistantContent::Text(t) = c {
+                    if let AssistantContent::Text(t) = c {
                         Some(t.text.clone())
                     } else {
                         None

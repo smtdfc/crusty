@@ -1,6 +1,6 @@
 use crate::{agent::memory::message::ChatRow, exceptions::crusty::CrustyError};
 use chrono::Utc;
-use rig::message::Message;
+use rig_core::message::Message;
 use sqlx::{AnyPool, query, query_as};
 use tracing::info;
 
