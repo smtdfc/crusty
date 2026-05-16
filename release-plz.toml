@@ -21,9 +21,11 @@ name = "crusty_plugin_telegram"
 changelog_path = "crates/crusty_plugin_telegram/CHANGELOG.md"
 changelog_update = true
 publish = false
+git_tag_name = "crusty_plugin_telegram-v{{ version }}"
 
 [[package]]
 name = "crusty"
 changelog_path = "crates/crusty/CHANGELOG.md"
 changelog_update = true
 publish = false
+git_tag_name = "crusty-v{{ version }}"
