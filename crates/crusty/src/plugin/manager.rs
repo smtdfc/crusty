@@ -1,22 +1,24 @@
 use std::{
     collections::HashMap,
     path::Path,
-    sync::{Arc, LazyLock, RwLock},
+    sync::{Arc, LazyLock, OnceLock, RwLock},
     time::Duration,
 };
 
 use abi_stable::std_types::RString;
 use crusty_plugin::bridge::{ChatCallback, PluginRef};
+use tokio::sync::Mutex;
 use tracing::{error, info};
 
 use crate::{
     agent::{
         agent::{AnyAgent, create_chat_agent},
-        memory::store::get_store,
+        memory::session::{Session, create_session},
+        message::ChatMessage,
     },
-    cli::utils::get_active_proxy,
-    config::{config::GLOBAL_CONFIG, plugin::PluginConfig},
-    helpers::tui::print_error,
+    cli::utils::{get_active_proxy_and_check, get_agent_params, get_initialized_store},
+    config::plugin::PluginConfig,
+    helpers::types::{ArcMutex, LazyCacheLock, LazyRwLock},
     plugin::loader::load_plugin,
 };
 use moka::future::Cache;
@@ -25,17 +27,19 @@ const HOST_CALLBACK: ChatCallback = ChatCallback {
     ask: host_ask_handler,
 };
 
-static AGENT_SESSIONS: LazyLock<Cache<String, Arc<dyn AnyAgent>>> = LazyLock::new(|| {
+static AGENT_SESSIONS: LazyCacheLock<String, Box<dyn AnyAgent>> = LazyLock::new(|| {
     Cache::builder()
         .time_to_idle(Duration::from_secs(30 * 60))
         .max_capacity(1000)
         .build()
 });
 
-static LOADED_PLUGINS: LazyLock<RwLock<HashMap<String, (PluginRef, &'static PluginConfig)>>> =
+static LOADED_PLUGINS: LazyRwLock<HashMap<String, (PluginRef, &'static PluginConfig)>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
-static PLUGIN_CHAT_HOOKS: LazyLock<RwLock<HashMap<String, PluginRef>>> =
+static PLUGIN_CHAT_HOOKS: LazyRwLock<HashMap<String, PluginRef>> =
     LazyLock::new(|| RwLock::new(HashMap::new()));
+
+static HOST_RUNTIME: OnceLock<tokio::runtime::Handle> = OnceLock::new();
 
 pub fn register_plugin(id: &str, config: &'static PluginConfig) {
     let mut plugins = LOADED_PLUGINS.write().unwrap();
@@ -52,6 +56,9 @@ pub fn load_all_plugin(plugins: &'static Vec<PluginConfig>) {
 }
 
 pub fn run_all_plugin() {
+    // Capture the host's tokio runtime handle so that FFI callbacks can spawn tasks
+    let _ = HOST_RUNTIME.set(tokio::runtime::Handle::current());
+
     let plugins = LOADED_PLUGINS.read().unwrap();
     let mut chat_hooks = PLUGIN_CHAT_HOOKS.write().unwrap();
     let ids: Vec<String> = plugins.keys().cloned().collect();
@@ -79,39 +86,78 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
         plugin_id, session_id
     );
 
+    let p_id = plugin_id.to_string();
     let s_id = session_id.to_string();
+    let q = question.to_string();
 
-    let agent = AGENT_SESSIONS.get_with(s_id.clone(), async move {
-        let config = GLOBAL_CONFIG.read().unwrap();
-        let Some((_current_proxy, proxy_config, _proxy)) = get_active_proxy(&config, "start")
-        else {
-            panic!("")
-        };
+    if let Some(rt) = HOST_RUNTIME.get() {
+        rt.spawn(async move {
+            let (proxy_config, model_name, api_key) = {
+                let Some((_current_proxy, proxy_config, _proxy)) =
+                    get_active_proxy_and_check("start", false)
+                else {
+                    error!("Failed to get active proxy for plugin chat");
+                    return;
+                };
 
-        let Some(model_name) = proxy_config.current_model.clone() else {
-            print_error("No model select. Please select a model to start chat.");
-            panic!("")
-        };
+                let Some((model_name, api_key)) = get_agent_params(&proxy_config) else {
+                    error!("Failed to get agent parameters for plugin chat");
+                    return;
+                };
+                (proxy_config, model_name, api_key)
+            };
 
-        let api_key = match proxy_config.api_key.as_deref() {
-            None => String::from(""),
-            Some(v) => v.to_string(),
-        };
+            let agent_arc = AGENT_SESSIONS
+                .get_with(s_id.clone(), async move {
+                    let agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
+                    Arc::new(Mutex::new(agent)) as ArcMutex<Box<dyn AnyAgent>>
+                })
+                .await;
 
-        let Some(ref store_config) = config.store else {
-            print_error("Store not configured. Please setup your store.");
-            panic!("")
-        };
-        let memory_store = match get_store(store_config).await {
-            Ok(s) => s,
-            Err(e) => {
-                error!(error = ?e, "Failed to create session");
-                print_error(&format!("Cannot init chat session now. Cause: {}", e));
-                panic!("")
+            let Some(memory_store) = get_initialized_store().await else {
+                error!("Failed to initialize store for plugin chat");
+                return;
+            };
+
+            let mut session = match Session::load(s_id.clone(), &memory_store).await {
+                Ok(s) => s,
+                Err(_) => match create_session(memory_store.clone()).await {
+                    Ok(mut s) => {
+                        s.session_id = s_id.clone();
+                        s
+                    }
+                    Err(e) => {
+                        error!(error = ?e, "Failed to create session");
+                        return;
+                    }
+                },
+            };
+
+            let mut agent = agent_arc.lock().await;
+
+            let full_response = Arc::new(std::sync::Mutex::new(String::new()));
+            let response_clone = Arc::clone(&full_response);
+
+            let callback = Box::new(move |m: ChatMessage| {
+                let ChatMessage::TextMessage(chunk) = m;
+                let mut resp = response_clone.lock().unwrap();
+                resp.push_str(&chunk.content);
+            });
+
+            if let Err(e) = agent.chat(&q, &mut session, callback).await {
+                error!(error = ?e, "Failed to chat via plugin");
+                return;
             }
-        };
 
-        let mut agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
-        Arc::from(agent) as Arc<dyn AnyAgent>
-    });
+            let final_message = full_response.lock().unwrap().clone();
+            let plugins = PLUGIN_CHAT_HOOKS.read().unwrap();
+            if let Some(plugin_ref) = plugins.get(&p_id) {
+                if let Some(Some(handle_chat_respond)) = plugin_ref.handle_chat_respond() {
+                    handle_chat_respond(s_id.clone().into(), final_message.into());
+                }
+            }
+        });
+    } else {
+        error!("Host tokio runtime not available for plugin callback");
+    }
 }

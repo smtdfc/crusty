@@ -1,26 +1,43 @@
+use std::sync::Arc;
+
 use rig::message::Message;
 use sqlx::Database;
-use tracing::{info, trace};
+use tracing::info;
 use uuid::Uuid;
 
 use crate::{
-    agent::memory::{context::save_message, store::MemoryStore},
+    agent::memory::{
+        context::{get_context, save_message},
+        store::SharedMemoryStore,
+    },
     exceptions::crusty::CrustyError,
+    helpers::types::{ArcMutex, new_arc_mutex},
 };
 
-pub struct Session<'a> {
+pub type History = ArcMutex<Vec<Message>>;
+pub struct Session {
     pub session_id: String,
-    pub store: &'a MemoryStore,
-    pub history: Vec<Message>,
+    pub store: SharedMemoryStore,
+    pub history: History,
 }
 
-impl<'a> Session<'a> {
-    pub fn new(id: String, store: &'a MemoryStore) -> Self {
+impl Session {
+    pub fn new(id: String, store: &SharedMemoryStore) -> Self {
         Self {
             session_id: id,
-            history: vec![],
-            store,
+            history: new_arc_mutex(vec![]),
+            store: Arc::clone(&store),
         }
+    }
+
+    pub async fn load(id: String, store: &SharedMemoryStore) -> Result<Self, CrustyError> {
+        let history = get_context(&store.pool, &id, 100).await?;
+        println!("{}", history.len());
+        Ok(Self {
+            session_id: id,
+            history: new_arc_mutex(history),
+            store: Arc::clone(&store),
+        })
     }
 
     pub async fn add_message(&mut self, role: &str, msg: Message) -> Result<(), CrustyError> {
@@ -50,7 +67,9 @@ impl<'a> Session<'a> {
         };
 
         save_message(&self.store.pool, self.session_id.as_str(), role, &content).await?;
-        self.history.push(msg);
+        let mut history_lock = self.history.lock().await;
+        history_lock.push(msg);
+
         Ok(())
     }
 }
@@ -58,7 +77,7 @@ impl<'a> Session<'a> {
 pub trait MemoryDatabase: Database {}
 impl<T: Database> MemoryDatabase for T {}
 
-pub async fn create_session(store: &MemoryStore) -> Result<Session<'_>, CrustyError> {
+pub async fn create_session(store: SharedMemoryStore) -> Result<Session, CrustyError> {
     let session_id = Uuid::new_v4().to_string();
     let session = Session::new(session_id.clone(), &store);
     info!("Session {} created", session_id);

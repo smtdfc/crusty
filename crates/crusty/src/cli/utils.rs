@@ -1,15 +1,20 @@
-use tracing::{info, trace};
+use tracing::{error, info};
 
 use crate::{
+    agent::memory::store::{SharedMemoryStore, get_store},
     ai_proxy::ai_proxy::{AIProxy, get_proxy},
-    config::{ai_proxy::AIProxyConfig, config::AppConfig},
+    config::{
+        ai_proxy::AIProxyConfig,
+        config::{AppConfig, GLOBAL_CONFIG},
+    },
     helpers::tui::print_error,
 };
 
-pub fn get_active_proxy(
-    config: &AppConfig,
-    action: &str,
-) -> Option<(String, AIProxyConfig, Box<dyn AIProxy>)> {
+use tokio::sync::OnceCell;
+
+pub type ActiveProxy = (String, AIProxyConfig, Box<dyn AIProxy>);
+
+pub fn get_active_proxy(config: &AppConfig, action: &str) -> Option<ActiveProxy> {
     let Some(current_proxy) = config.current_proxy.clone() else {
         print_error("No proxy select. Please setup first.");
         return None;
@@ -47,4 +52,75 @@ pub fn get_active_proxy(
     }
 
     Some((current_proxy, proxy_config, proxy))
+}
+
+pub fn get_active_proxy_and_check(action: &str, check_running: bool) -> Option<ActiveProxy> {
+    let config = GLOBAL_CONFIG.read().unwrap();
+    let Some((current_proxy, proxy_config, proxy)) = get_active_proxy(&config, action) else {
+        return None;
+    };
+
+    if check_running {
+        match proxy.is_running() {
+            Ok(false) => {
+                print_error(&format!(
+                    "Proxy {} (platform: {}) is offline. Please run proxy before.",
+                    current_proxy, proxy_config.platform
+                ));
+                return None;
+            }
+            Err(e) => {
+                error!(error = ?e, "Failed to check proxy status");
+                print_error(&format!(
+                    "Cannot check status of proxy {} (platform: {}) on port {}. Please check log for details.",
+                    current_proxy, proxy_config.platform, proxy_config.port
+                ));
+                return None;
+            }
+            Ok(true) => {}
+        }
+    }
+
+    Some((current_proxy, proxy_config, proxy))
+}
+
+pub fn get_agent_params(proxy_config: &AIProxyConfig) -> Option<(String, String)> {
+    let Some(model_name) = proxy_config.current_model.clone() else {
+        print_error("No model select. Please select a model to start chat.");
+        return None;
+    };
+
+    let api_key = match proxy_config.api_key.as_deref() {
+        None => String::from(""),
+        Some(v) => v.to_string(),
+    };
+
+    Some((model_name, api_key))
+}
+
+static STORE_CACHE: OnceCell<Option<SharedMemoryStore>> = OnceCell::const_new();
+
+pub async fn get_initialized_store() -> Option<SharedMemoryStore> {
+    let store_opt = STORE_CACHE.get_or_init(|| async {
+        let store_config = {
+            let config = GLOBAL_CONFIG.read().unwrap();
+            config.store.clone()
+        };
+
+        let Some(store_config) = store_config else {
+            print_error("Store not configured. Please setup your store.");
+            return None;
+        };
+
+        match get_store(&store_config).await {
+            Ok(s) => Some(s),
+            Err(e) => {
+                error!(error = ?e, "Failed to create store");
+                print_error(&format!("Cannot init chat session now. Cause: {}", e));
+                None
+            }
+        }
+    }).await;
+
+    store_opt.clone()
 }

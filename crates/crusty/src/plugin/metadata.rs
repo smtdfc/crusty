@@ -2,7 +2,7 @@ use std::{fs::File, path::Path};
 
 use serde::Deserialize;
 use std::io::BufReader;
-use tracing::{info, trace};
+use tracing::info;
 
 use crate::exceptions::crusty::CrustyError;
 

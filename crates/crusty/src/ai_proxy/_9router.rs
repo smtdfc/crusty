@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use tracing::{info, trace};
+use tracing::info;
 
 use crate::{
     ai_proxy::ai_proxy::AIProxy,

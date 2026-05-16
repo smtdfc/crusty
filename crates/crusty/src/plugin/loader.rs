@@ -1,6 +1,6 @@
 use abi_stable::library::RootModule;
 use crusty_plugin::bridge::PluginRef;
-use tracing::{info, trace};
+use tracing::info;
 
 use std::{
     fs,

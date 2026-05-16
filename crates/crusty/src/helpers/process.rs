@@ -2,8 +2,6 @@
 use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};
 use sysinfo::{Pid, ProcessesToUpdate, System};
-#[cfg(target_os = "windows")]
-use tracing::trace;
 use tracing::{error, info};
 
 use std::fs;

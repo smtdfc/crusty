@@ -24,31 +24,41 @@ impl<T: rig::completion::CompletionModel + 'static> ChatAgent<T> {
     }
 }
 
+pub type OnMessageCallback = Box<dyn FnMut(ChatMessage) + Send + Sync>;
+
+pub fn create_message_callback(
+    f: impl FnMut(ChatMessage) + Send + Sync + 'static,
+) -> OnMessageCallback {
+    Box::new(f)
+}
+
 #[async_trait::async_trait]
 pub trait AnyAgent: Send + Sync {
-    async fn chat<'a>(
+    async fn chat(
         &mut self,
         prompt: &str,
-        session: &mut Session<'a>,
-        mut on_message: Box<dyn FnMut(ChatMessage) + Send + Sync>,
+        session: &mut Session,
+        mut on_message: OnMessageCallback,
     ) -> Result<(), CrustyError>;
 }
 
 #[async_trait::async_trait]
 impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
-    async fn chat<'a>(
+    async fn chat(
         &mut self,
         prompt: &str,
-        session: &mut Session<'a>,
-        mut on_message: Box<dyn FnMut(ChatMessage) + Send + Sync>,
+        session: &mut Session,
+        mut on_message: OnMessageCallback,
     ) -> Result<(), CrustyError> {
         session
             .add_message("user", Message::user(prompt.to_string()))
             .await?;
-        let mut stream = self
-            .agent
-            .stream_chat(prompt, session.history.clone())
-            .await;
+
+        let history_lock = session.history.lock().await;
+        let history_data = history_lock.clone();
+        drop(history_lock);
+
+        let mut stream = self.agent.stream_chat(prompt, history_data).await;
         let mut full_response = String::new();
 
         while let Some(chunk) = stream.next().await {

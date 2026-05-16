@@ -9,7 +9,7 @@ pub struct Plugin {
     pub get_info: extern "C" fn() -> PluginInfo,
     pub start_service: Option<extern "C" fn(callback: ControlCallback)>,
     pub init_chat: Option<extern "C" fn(ChatCallback) -> RString>,
-    pub handle_chat_respond: Option<extern "C" fn(message: RString)>,
+    pub handle_chat_respond: Option<extern "C" fn(session_id: RString, message: RString)>,
 }
 
 #[repr(C)]

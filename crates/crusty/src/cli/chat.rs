@@ -1,11 +1,10 @@
 use crate::{
     agent::{
-        agent::create_chat_agent,
-        memory::{session::create_session, store::MemoryStore},
+        agent::{create_chat_agent, create_message_callback},
+        memory::{session::create_session, store::SharedMemoryStore},
         message::ChatMessage,
     },
-    cli::utils::get_active_proxy,
-    config::config::GLOBAL_CONFIG,
+    cli::utils::{get_active_proxy_and_check, get_agent_params},
     helpers::tui::{print_error, show_loading},
 };
 use console::{Term, style};
@@ -13,26 +12,20 @@ use dialoguer::{Input, theme::ColorfulTheme};
 use std::io::Write;
 use tracing::error;
 
-pub async fn handle_chat_start(memory_store: &MemoryStore) {
-    let config = GLOBAL_CONFIG.read().unwrap();
-    let Some((_current_proxy, proxy_config, _proxy)) = get_active_proxy(&config, "start") else {
+pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
+    let Some((_current_proxy, proxy_config, _proxy)) = get_active_proxy_and_check("start", false)
+    else {
+        return;
+    };
+
+    let Some((model_name, api_key)) = get_agent_params(&proxy_config) else {
         return;
     };
 
     let theme = ColorfulTheme::default();
     let term = Term::stdout();
 
-    let Some(model_name) = proxy_config.current_model.clone() else {
-        print_error("No model select. Please select a model to start chat.");
-        return;
-    };
-
-    let api_key = match proxy_config.api_key.as_deref() {
-        None => String::from(""),
-        Some(v) => v.to_string(),
-    };
-
-    let mut session = match create_session(&memory_store).await {
+    let mut session = match create_session(memory_store.clone()).await {
         Ok(s) => s,
         Err(e) => {
             error!(error = ?e, "Failed to create session");
@@ -58,7 +51,7 @@ pub async fn handle_chat_start(memory_store: &MemoryStore) {
                 let pb = show_loading("Agent: Thinking ...");
                 let mut first_chunk = true;
 
-                let callback = Box::new(move |m| {
+                let callback = create_message_callback(move |m| {
                     if first_chunk {
                         pb.finish_and_clear();
                         print!("{} ", style("Agent:").green().bold());
