@@ -8,7 +8,7 @@ pub async fn start_bot(f: ChatCallback) {
     pretty_env_logger::init();
     log::info!("Starting bot...");
 
-    let token = env::var("TELEGRAM_BOT_TOKEN").unwrap_or_else(|_| "".to_string());
+    let token = env::var("TELEGRAM_BOT_TOKEN").unwrap_or_else(|_| "default token".to_string());
     let bot = Bot::new(token);
     let _ = crate::BOT.set(bot.clone());
 
