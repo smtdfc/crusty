@@ -28,4 +28,7 @@ pub enum CrustyError {
 
     #[error("Config Error: {0}")]
     ConfigError(String),
+
+    #[error("Tool Error: {0}")]
+    ToolError(String),
 }
