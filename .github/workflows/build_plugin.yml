@@ -91,13 +91,15 @@ jobs:
 
       - name: Upload Zip to R2
         if: steps.check_manifest.outputs.exists == 'true'
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com --acl public-read --exclude "*" --include "*.zip"
+        run: |
+          aws s3 sync . s3://$AWS_S3_BUCKET/$DEST_DIR \
+            --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+            --exclude "*" \
+            --include "*.zip" \
+            --no-progress
         env:
           AWS_S3_BUCKET: "crusty-plugins"
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_REGION: "auto"
-          SOURCE_DIR: "."
           DEST_DIR: "releases/${{ steps.parse.outputs.pkg }}/${{ steps.parse.outputs.ver }}"
