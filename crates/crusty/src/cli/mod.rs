@@ -1,6 +1,8 @@
 pub mod chat;
 pub mod config;
+pub mod mode;
 pub mod plugin;
+pub mod provider;
 pub mod proxy;
 pub mod setup;
 pub mod start;

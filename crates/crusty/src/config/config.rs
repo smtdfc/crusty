@@ -8,14 +8,44 @@ use tracing::error;
 
 use crate::config::ai_proxy::AIProxyConfig;
 use crate::config::plugin::PluginConfig;
+use crate::config::provider::ProviderConfig;
 use crate::config::store::StoreConfig;
 use crate::exceptions::crusty::CrustyError;
 use crate::helpers::tui::print_error;
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+pub enum RunMode {
+    #[serde(rename = "proxy")]
+    Proxy,
+    #[serde(rename = "provider")]
+    Provider,
+}
+
+impl std::fmt::Display for RunMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RunMode::Proxy => write!(f, "proxy"),
+            RunMode::Provider => write!(f, "provider"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AppConfig {
+    /// Current running mode (proxy or provider)
+    #[serde(default)]
+    pub mode: Option<RunMode>,
+
+    /// Legacy field for backward compatibility with proxy-based config
     pub current_proxy: Option<String>,
     pub ai_proxies: HashMap<String, AIProxyConfig>,
+
+    /// New field for OpenAI-compatible providers
+    #[serde(default)]
+    pub current_provider: Option<String>,
+    #[serde(default)]
+    pub providers: HashMap<String, ProviderConfig>,
+
     pub plugins: Vec<PluginConfig>,
     pub store: Option<StoreConfig>,
 }
@@ -90,6 +120,109 @@ impl AppConfig {
 
     pub fn find_proxy_by_id(&self, name: &String) -> Option<AIProxyConfig> {
         self.ai_proxies.get(name).cloned()
+    }
+
+    /// Find a provider configuration by name
+    pub fn find_provider_by_id(&self, name: &str) -> Option<ProviderConfig> {
+        self.providers.get(name).cloned()
+    }
+
+    /// Get the currently active provider configuration
+    pub fn get_current_provider(&self) -> Option<ProviderConfig> {
+        self.current_provider
+            .as_ref()
+            .and_then(|name| self.find_provider_by_id(name))
+    }
+
+    /// Set the currently active provider
+    pub fn set_current_provider(&mut self, name: Option<String>) -> Result<(), CrustyError> {
+        if let Some(ref provider_name) = name {
+            if !self.providers.contains_key(provider_name) {
+                return Err(CrustyError::ConfigError(format!(
+                    "Provider '{}' not found",
+                    provider_name
+                )));
+            }
+        }
+        self.current_provider = name;
+        Ok(())
+    }
+
+    /// Add a new provider configuration
+    pub fn add_provider(
+        &mut self,
+        name: String,
+        config: ProviderConfig,
+    ) -> Result<(), CrustyError> {
+        if !config.is_valid() {
+            return Err(CrustyError::ConfigError(
+                "Provider configuration is invalid (missing base_url or api_key)".into(),
+            ));
+        }
+        self.providers.insert(name, config);
+        Ok(())
+    }
+
+    /// Remove a provider configuration
+    pub fn remove_provider(&mut self, name: &str) -> Result<(), CrustyError> {
+        self.providers.remove(name);
+
+        // If the removed provider was active, clear the current provider
+        if let Some(ref current) = self.current_provider {
+            if current == name {
+                self.current_provider = None;
+            }
+        }
+        Ok(())
+    }
+
+    /// List all provider names
+    pub fn list_providers(&self) -> Vec<String> {
+        self.providers.keys().cloned().collect()
+    }
+
+    /// Get the current running mode (requires mode to be explicitly set)
+    pub fn get_mode(&self) -> Result<RunMode, CrustyError> {
+        match self.mode {
+            Some(mode) => Ok(mode),
+            None => Err(CrustyError::ConfigError(
+                "No mode selected. Please run 'crusty mode switch' to choose between 'proxy' and 'provider' mode.".into(),
+            )),
+        }
+    }
+
+    /// Set the running mode
+    pub fn set_mode(&mut self, mode: RunMode) -> Result<(), CrustyError> {
+        // Validate that the chosen mode has necessary configuration
+        match mode {
+            RunMode::Proxy => {
+                if self.current_proxy.is_none() || self.ai_proxies.is_empty() {
+                    return Err(CrustyError::ConfigError(
+                        "No proxy configured. Please run 'crusty setup' first.".into(),
+                    ));
+                }
+            }
+            RunMode::Provider => {
+                if self.current_provider.is_none() || self.providers.is_empty() {
+                    return Err(CrustyError::ConfigError(
+                        "No provider configured. Please run 'crusty provider add' first.".into(),
+                    ));
+                }
+            }
+        }
+
+        self.mode = Some(mode);
+        Ok(())
+    }
+
+    /// Check if currently in provider mode (returns error if mode not set)
+    pub fn is_provider_mode(&self) -> Result<bool, CrustyError> {
+        Ok(self.get_mode()? == RunMode::Provider)
+    }
+
+    /// Check if currently in proxy mode (returns error if mode not set)
+    pub fn is_proxy_mode(&self) -> Result<bool, CrustyError> {
+        Ok(self.get_mode()? == RunMode::Proxy)
     }
 }
 

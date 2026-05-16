@@ -1,6 +1,11 @@
 use clap::Parser;
 use crusty_core::cli::config::handle_config;
+use crusty_core::cli::mode::{ModeCommands, handle_mode_show, handle_mode_switch};
 use crusty_core::cli::plugin::{PluginCommands, handle_plugin_install};
+use crusty_core::cli::provider::{
+    ProviderCommands, handle_provider_add, handle_provider_list, handle_provider_remove,
+    handle_provider_switch,
+};
 use crusty_core::cli::proxy::{
     ProxyCommands, handle_proxy_dashboard, handle_proxy_start, handle_proxy_stop,
 };
@@ -21,6 +26,18 @@ enum Commands {
     Proxy {
         #[command(subcommand)]
         sub: ProxyCommands,
+    },
+
+    /// Manage OpenAI-compatible providers (add, list, remove, switch)
+    Provider {
+        #[command(subcommand)]
+        sub: ProviderCommands,
+    },
+
+    /// Switch between proxy mode and provider mode
+    Mode {
+        #[command(subcommand)]
+        sub: ModeCommands,
     },
 
     /// Manage plugin installation and lifecycle
@@ -74,6 +91,34 @@ async fn main() {
 
             ProxyCommands::Dashboard {} => {
                 handle_proxy_dashboard();
+            }
+        },
+
+        Commands::Provider { sub } => match sub {
+            ProviderCommands::List => {
+                handle_provider_list();
+            }
+
+            ProviderCommands::Add => {
+                handle_provider_add();
+            }
+
+            ProviderCommands::Remove => {
+                handle_provider_remove();
+            }
+
+            ProviderCommands::Switch => {
+                handle_provider_switch();
+            }
+        },
+
+        Commands::Mode { sub } => match sub {
+            ModeCommands::Show => {
+                handle_mode_show();
+            }
+
+            ModeCommands::Switch => {
+                handle_mode_switch();
             }
         },
 

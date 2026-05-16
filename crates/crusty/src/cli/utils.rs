@@ -6,6 +6,7 @@ use crate::{
     config::{
         ai_proxy::AIProxyConfig,
         config::{AppConfig, GLOBAL_CONFIG},
+        provider::ProviderConfig,
     },
     helpers::tui::print_error,
 };
@@ -13,6 +14,7 @@ use crate::{
 use tokio::sync::OnceCell;
 
 pub type ActiveProxy = (String, AIProxyConfig, Box<dyn AIProxy>);
+pub type ActiveProvider = (String, ProviderConfig);
 
 pub fn get_active_proxy(config: &AppConfig, action: &str) -> Option<ActiveProxy> {
     let Some(current_proxy) = config.current_proxy.clone() else {
@@ -96,6 +98,32 @@ pub fn get_agent_params(proxy_config: &AIProxyConfig) -> Option<(String, String)
     };
 
     Some((model_name, api_key))
+}
+
+/// Get the active provider and its configuration
+pub fn get_active_provider(config: &AppConfig) -> Option<ActiveProvider> {
+    let Some(current_provider) = config.current_provider.clone() else {
+        print_error("No provider configured. Please run 'crusty provider add' to add a provider.");
+        return None;
+    };
+
+    let Some(provider_config) = config.find_provider_by_id(&current_provider) else {
+        print_error("No provider found. Please setup first.");
+        return None;
+    };
+
+    if !provider_config.is_valid() {
+        print_error("Provider configuration is invalid (missing base_url or api_key).");
+        return None;
+    }
+
+    Some((current_provider, provider_config))
+}
+
+/// Get the active provider and check availability
+pub fn get_active_provider_and_check() -> Option<ActiveProvider> {
+    let config = GLOBAL_CONFIG.read().unwrap();
+    get_active_provider(&config)
 }
 
 static STORE_CACHE: OnceCell<Option<SharedMemoryStore>> = OnceCell::const_new();

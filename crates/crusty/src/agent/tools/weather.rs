@@ -2,64 +2,76 @@ use reqwest::blocking::Client;
 use rig_core::tool::ToolError;
 use rig_derive::rig_tool;
 use serde::Deserialize;
-use std::env;
+use tracing::info;
+
+// 1. Định nghĩa Struct khớp với cái JSON "khủng bố" kia
+#[derive(Deserialize)]
+struct WttrResponse {
+    current_condition: Vec<CurrentCondition>,
+    nearest_area: Vec<NearestArea>,
+}
+
+#[derive(Deserialize)]
+struct CurrentCondition {
+    temp_C: String,
+    feelsLikeC: String,
+    humidity: String,
+    weatherDesc: Vec<ValueWrapper>,
+}
+
+#[derive(Deserialize)]
+struct NearestArea {
+    areaName: Vec<ValueWrapper>,
+}
+
+#[derive(Deserialize)]
+struct ValueWrapper {
+    value: String,
+}
 
 #[rig_tool(
-    description = "Perform basic arithmetic operations",
-    required(x, y, operation)
+    description = "Get current weather for a specific location using wttr.in",
+    required(location)
 )]
-fn get_weather(location: String) -> Result<String, ToolError> {
-    let api_key = env::var("OPENWEATHER_API_KEY")
-        .map_err(|_| ToolError::ToolCallError("OPENWEATHER_API_KEY not set".into()))?;
-
-    let client = Client::builder()
-        .build()
-        .map_err(|e| ToolError::ToolCallError(format!("http client build error: {e}").into()))?;
-
-    let units = "metric".to_string();
-    let url = reqwest::Url::parse_with_params(
-        "https://api.openweathermap.org/data/2.5/weather",
-        &[("q", &location), ("appid", &api_key), ("units", &units)],
-    )
-    .map_err(|e| ToolError::ToolCallError(format!("url build error: {e}").into()))?;
-
+pub fn get_weather(location: String) -> Result<String, ToolError> {
+    let client = Client::new();
+    let url = format!("https://wttr.in/{}?format=j1", location);
+    info!("Tool call");
     let resp = client
         .get(url)
         .send()
-        .map_err(|e| ToolError::ToolCallError(format!("request error: {e}").into()))?
-        .error_for_status()
-        .map_err(|e| ToolError::ToolCallError(format!("http status error: {e}").into()))?;
+        .map_err(|e| ToolError::ToolCallError(format!("Network error: {e}").into()))?;
 
-    #[derive(Deserialize)]
-    struct WeatherResp {
-        name: String,
-        weather: Vec<Weather>,
-        main: Main,
-    }
-
-    #[derive(Deserialize)]
-    struct Weather {
-        description: String,
-    }
-
-    #[derive(Deserialize)]
-    struct Main {
-        temp: f64,
-        humidity: Option<u64>,
-    }
-
-    let w: WeatherResp = resp
+    let data: WttrResponse = resp
         .json()
-        .map_err(|e| ToolError::ToolCallError(format!("json parse error: {e}").into()))?;
+        .map_err(|e| ToolError::ToolCallError(format!("JSON parse error: {e}").into()))?;
 
-    let desc = w
-        .weather
+    let condition = data
+        .current_condition
         .get(0)
-        .map(|w| w.description.clone())
-        .unwrap_or_default();
+        .ok_or_else(|| ToolError::ToolCallError("No weather data found".into()))?;
+
+    let area = data
+        .nearest_area
+        .get(0)
+        .map(|a| {
+            a.areaName
+                .get(0)
+                .map(|v| v.value.as_str())
+                .unwrap_or("Unknown")
+        })
+        .unwrap_or("Unknown");
+
+    let desc = condition
+        .weatherDesc
+        .get(0)
+        .map(|v| v.value.as_str())
+        .unwrap_or("No description");
+
     let out = format!(
-        "Location: {}\nTemperature: {} °C\nConditions: {}",
-        w.name, w.main.temp, desc
+        "Địa điểm: {}\nNhiệt độ: {}°C (Cảm giác như: {}°C)\nĐộ ẩm: {}%\nTrạng thái: {}",
+        area, condition.temp_C, condition.feelsLikeC, condition.humidity, desc
     );
+
     Ok(out)
 }

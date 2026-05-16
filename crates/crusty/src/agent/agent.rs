@@ -2,6 +2,8 @@ use crate::agent::memory::session::Session;
 use crate::agent::message::ChatMessage;
 use crate::agent::message::TextMessage;
 use crate::agent::prompt::SYSTEM_PROMPT;
+use crate::agent::tools::weather::GetWeather;
+use crate::config::provider::ProviderConfig;
 use crate::exceptions::crusty::CrustyError;
 use futures_util::stream::StreamExt;
 use rig_core::agent::Agent;
@@ -75,6 +77,21 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                             content: t.text,
                         }));
                     }
+
+                    StreamedAssistantContent::ToolCall {
+                        tool_call,
+                        internal_call_id: _,
+                    } => {
+                        println!("Agent calling tool: {}", tool_call.function.name);
+                    }
+
+                    StreamedAssistantContent::ToolCallDelta {
+                        id,
+                        internal_call_id: _,
+                        content: _,
+                    } => {
+                        println!("Agent calling tool: {}", id);
+                    }
                     _ => {}
                 },
 
@@ -100,6 +117,7 @@ pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAg
         .expect("Cannot create agent")
         .agent(model)
         .preamble(SYSTEM_PROMPT)
+        .tool(GetWeather)
         .build();
 
     info!(
@@ -107,4 +125,37 @@ pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAg
         port, model
     );
     Box::new(ChatAgent::new(agent))
+}
+
+/// Create a chat agent from a provider configuration
+/// This supports any OpenAI-compatible API provider
+pub fn create_chat_agent_from_provider(
+    provider: &ProviderConfig,
+    model: &str,
+) -> Result<Box<dyn AnyAgent>, CrustyError> {
+    if !provider.is_valid() {
+        return Err(CrustyError::AgentError(
+            "Provider configuration is invalid (missing base_url or api_key)".into(),
+        ));
+    }
+
+    let normalized_base_url = ProviderConfig::normalize_base_url(&provider.base_url);
+
+    let client = openai::Client::builder()
+        .api_key(&provider.api_key)
+        .base_url(normalized_base_url.clone())
+        .build()
+        .map_err(|e| CrustyError::AgentError(format!("Failed to create OpenAI client: {}", e)))?;
+
+    let agent = client
+        .agent(model)
+        .preamble(SYSTEM_PROMPT)
+        .tool(GetWeather)
+        .build();
+
+    info!(
+        "Agent initialization successful. Provider: {}; Base URL: {}; Model: {}",
+        provider.provider_type, normalized_base_url, model
+    );
+    Ok(Box::new(ChatAgent::new(agent)))
 }
