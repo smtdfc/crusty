@@ -91,6 +91,7 @@ jobs:
 
       - name: Upload Zip to R2
         if: steps.check_manifest.outputs.exists == 'true'
+        shell: bash
         run: |
           aws s3 sync . s3://$AWS_S3_BUCKET/$DEST_DIR \
             --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \

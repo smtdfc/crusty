@@ -650,7 +650,7 @@ dependencies = [
 
 [[package]]
 name = "crusty_plugin_telegram"
-version = "0.1.12"
+version = "0.1.7"
 dependencies = [
  "abi_stable",
  "crusty_plugin",
