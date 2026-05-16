@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - <csr-id-4bf81b347057d1d845a263c032ae00d7388325b9/> update author name in plugin info to reflect team attribution
  - <csr-id-00d8abdf45046341b134c2c173d985500a26523d/> update plugin version to use the package version from Cargo.toml
  - <csr-id-b6401e3425420e5858a4b1499a989d51809c2162/> update author name in PluginInfo for Crusty Plugin Telegram
+ - <csr-id-ee235fa1f03260107902cfc244cb9f5a155ce28d/> update author name in PluginInfo for Crusty Plugin Telegram
 
 ### New Features
 
@@ -66,8 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <csr-read-only-do-not-edit/>
 
- - 1 commit contributed to the release.
- - 1 commit was understood as [conventional](https://www.conventionalcommits.org).
+ - 3 commits contributed to the release.
+ - 2 commits were understood as [conventional](https://www.conventionalcommits.org).
  - 0 issues like '(#ID)' were seen in commit messages
 
 ### Commit Details
@@ -77,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <details><summary>view details</summary>
 
  * **Uncategorized**
+    - Update author name in PluginInfo for Crusty Plugin Telegram ([`ee235fa`](https://github.com/smtdfc/crusty/commit/ee235fa1f03260107902cfc244cb9f5a155ce28d))
+    - Release crusty_plugin_telegram v0.1.0 ([`f6ec9a4`](https://github.com/smtdfc/crusty/commit/f6ec9a4fc62faa182bd586915e34d2d8fa82138f))
     - Update author name in PluginInfo for Crusty Plugin Telegram ([`b6401e3`](https://github.com/smtdfc/crusty/commit/b6401e3425420e5858a4b1499a989d51809c2162))
 </details>
 
