@@ -13,7 +13,9 @@ pub fn setup_logging() -> WorkerGuard {
     let file_layer = fmt::layer()
         .with_ansi(false)
         .with_writer(non_blocking)
-        .with_filter(LevelFilter::TRACE);
+        .with_filter(LevelFilter::TRACE)
+        .with_filter(LevelFilter::ERROR)
+        .with_filter(LevelFilter::INFO);
 
     tracing_subscriber::registry()
         .with(EnvFilter::from_default_env().add_directive(LevelFilter::INFO.into()))
