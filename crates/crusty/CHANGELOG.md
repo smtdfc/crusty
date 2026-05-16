@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11](https://github.com/smtdfc/crusty/compare/crusty-v0.1.10...crusty-v0.1.11) - 2026-05-16
+
+### Features
+
+- add chrono dependency and enhance session management with async traits
+- enhance agent functionality with async traits and new dependencies
+- add dotenv support and enhance plugin communication with session ID
+- enhance AIProxy with host and is_local fields; add dashboard URL functionality
+- Introduce CrustyError for better error handling across the application
+- restructure project to include new Telegram plugin and session management
+- enhance plugin system with chat functionality and configuration handling
+- implement plugin system with installation and metadata handling
+
+### Other
+
+- *(other)* release
+- *(other)* release
+- *(other)* remove debug print statement from load function in Session
+- *(other)* release
+- *(other)* release
+- *(other)* release
+- *(other)* update build workflow for R2 deployment and enhance dependency management
+- *(other)* update build process and remove deprecated plugin files
+- *(other)* release
+- *(other)* release
+- *(other)* update session and agent handling for improved memory management and type safety
+- *(other)* release
+- *(other)* release
+- *(other)* release
+- *(other)* Refactor Crusty Agent: Restructure project into crates, implement AI proxy functionality, and enhance CLI commands
+
 ## [0.1.10](https://github.com/smtdfc/crusty/compare/crusty-v0.1.9...crusty-v0.1.10) - 2026-05-16
 
 ### Other
