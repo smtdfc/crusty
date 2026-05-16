@@ -87,7 +87,7 @@ jobs:
           cd ./crates/$P_NAME
           python ../../scripts/build.py $CROSS_FLAG --target ${{ matrix.target }}
 
-          zip -j ../../${P_NAME}-${{ matrix.target }}.zip dist/*
+          7z a -tzip ../../${P_NAME}-${{ matrix.target }}.zip ./dist/*
 
       - name: Upload Zip to R2
         if: steps.check_manifest.outputs.exists == 'true'
