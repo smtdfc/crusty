@@ -13,5 +13,5 @@ commit_parsers = [
   { message = "^feat", group = "Features" },
   { message = "^fix", group = "Bug Fixes" },
   { message = "^perf", group = "Performance" },
-  {skip = true}
+  { message = ".*", group = "Other", default_scope = "other" } 
 ]
