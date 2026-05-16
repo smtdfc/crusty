@@ -32,7 +32,6 @@ impl Session {
 
     pub async fn load(id: String, store: &SharedMemoryStore) -> Result<Self, CrustyError> {
         let history = get_context(&store.pool, &id, 100).await?;
-        println!("{}", history.len());
         Ok(Self {
             session_id: id,
             history: new_arc_mutex(history),
