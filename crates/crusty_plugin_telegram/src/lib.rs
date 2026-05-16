@@ -62,7 +62,7 @@ extern "C" fn handle_chat_respond(session_id: RString, message: RString) {
 extern "C" fn get_info() -> PluginInfo {
     PluginInfo {
         name: "Crusty Plugin Telegram".into(),
-        author: "smtdfc".into(),
+        author: "Crusty Team".into(),
         version: env!("CARGO_PKG_VERSION").into(),
         description: "Enables Telegram Bot API integration for Crusty agents. Supports real-time streaming responses, command handling, and session-based conversation persistence.".into(),
     }
