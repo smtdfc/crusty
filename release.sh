@@ -64,3 +64,15 @@ else
     echo "❌ Error: Push failed."
     exit 1
 fi
+
+# --- 5. CREATE GITHUB RELEASE ---
+echo "📦 Creating GitHub Release page..."
+gh release create "$TAG_NAME" \
+    --title "Release $TAG_NAME" \
+    --notes-file "$CHANGELOG_PATH"
+
+if [ $? -eq 0 ]; then
+    echo "✅ GitHub Release created successfully!"
+else
+    echo "⚠️ Failed to create GitHub Release (but Tag was pushed)."
+fi
