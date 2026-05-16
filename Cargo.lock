@@ -605,7 +605,7 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
 name = "crusty"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "abi_stable",
  "async-trait",
@@ -650,7 +650,7 @@ dependencies = [
 
 [[package]]
 name = "crusty_plugin_telegram"
-version = "0.1.1"
+version = "0.1.12"
 dependencies = [
  "abi_stable",
  "crusty_plugin",
