@@ -6,12 +6,12 @@ use teloxide::{Bot, types::Message};
 
 pub async fn start_bot(f: ChatCallback) {
     pretty_env_logger::init();
-    log::info!("Starting throw dice bot...");
+    log::info!("Starting bot...");
 
-    let token = env::var("TELEGRAM_BOT_TOKEN").unwrap_or_else(|_| "default_value".to_string());
+    let token = env::var("TELEGRAM_BOT_TOKEN").unwrap_or_else(|_| "".to_string());
     let bot = Bot::new(token);
     let _ = crate::BOT.set(bot.clone());
-    
+
     teloxide::repl(bot, move |bot: Bot, msg: Message| async move {
         let chat_id = msg.chat.id.0.to_string();
         let user_text = msg.text().unwrap_or("");

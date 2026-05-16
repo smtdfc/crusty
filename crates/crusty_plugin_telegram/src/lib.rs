@@ -45,12 +45,13 @@ extern "C" fn handle_chat_respond(session_id: RString, message: RString) {
         let chat_id_str = session_id.to_string();
         let text = message.to_string();
         let bot = bot.clone();
-        
+
         rt.spawn(async move {
             use teloxide::prelude::*;
             if let Ok(chat_id) = chat_id_str.parse::<i64>() {
                 #[allow(deprecated)]
-                let _ = bot.send_message(teloxide::types::ChatId(chat_id), text)
+                let _ = bot
+                    .send_message(teloxide::types::ChatId(chat_id), text)
                     .parse_mode(teloxide::types::ParseMode::Markdown)
                     .await;
             }
