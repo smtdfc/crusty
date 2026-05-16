@@ -6,7 +6,7 @@ custom_major_increment_regex = "a^"
 git_tag_enable = true
 git_release_enable = true
 pr_draft = false
-
+git_tag_name = "{{ package }}-v{{ version }}"
 
 [changelog]
 commit_parsers = [
@@ -15,3 +15,15 @@ commit_parsers = [
   { message = "^perf", group = "Performance" },
   { message = ".*", group = "Other", default_scope = "other" } 
 ]
+
+[[package]]
+name = "crusty_plugin_telegram"
+changelog_path = "crates/crusty_plugin_telegram/CHANGELOG.md"
+changelog_update = true
+publish = false
+
+[[package]]
+name = "crusty"
+changelog_path = "crates/crusty/CHANGELOG.md"
+changelog_update = true
+publish = false
