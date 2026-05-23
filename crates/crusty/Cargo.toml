@@ -32,6 +32,7 @@ crusty_plugin = { version = "^0.1.0", path = "../plugin" }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "macros", "any", "chrono"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = "0.4"
+meval = "0.2"
 thiserror = "1.0"
 opener = "0.7"
 moka = { version = "0.12", features = ["sync","future" ] }

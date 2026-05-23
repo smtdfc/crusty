@@ -36,17 +36,18 @@ use console::{Alignment, pad_str};
 
 pub fn print_banner(
     model_name: &str,
-    proxy_name: &str,
-    proxy_platform: &str,
-    host: &str,
-    port: u64,
-    is_proxy_online: bool,
+    entity_kind: &str,
+    entity_name: &str,
+    entity_detail: &str,
+    endpoint_label: &str,
+    endpoint_value: &str,
+    is_online: bool,
     session_id: &str,
 ) {
     let term = console::Term::stdout();
     let _ = term.clear_screen();
 
-    let proxy_status = if is_proxy_online {
+    let proxy_status = if is_online {
         style("running").green().to_string()
     } else {
         style("offline").red().blink().to_string()
@@ -79,7 +80,7 @@ pub fn print_banner(
         style("│").dim()
     );
 
-    let proxy_line = format!(" Proxy   : {} ({})", proxy_name, proxy_platform);
+    let proxy_line = format!(" {}   : {} ({})", entity_kind, entity_name, entity_detail);
     println!(
         "{} {} {}",
         style("│").dim(),
@@ -87,7 +88,7 @@ pub fn print_banner(
         style("│").dim()
     );
 
-    let address_line = format!(" Address : {}:{}", host, port);
+    let address_line = format!(" {} : {}", endpoint_label, endpoint_value);
     println!(
         "{} {} {}",
         style("│").dim(),

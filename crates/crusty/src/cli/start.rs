@@ -110,20 +110,22 @@ pub async fn handle_start(jump_to_chat: bool) {
     if let Some((provider_name, provider_config)) = &provider_info {
         print_banner(
             &model_name,
+            "Provider",
             provider_name,
             &provider_config.provider_type,
-            "api",
-            0,
+            "Base URL",
+            &provider_config.base_url,
             true,
             &session.session_id,
         );
     } else if let Some((current_proxy, proxy_config)) = &proxy_info {
         print_banner(
             &model_name,
+            "Proxy",
             current_proxy,
             &proxy_config.platform,
-            &proxy_config.host,
-            proxy_config.port,
+            "Address",
+            &format!("{}:{}", proxy_config.host, proxy_config.port),
             true,
             &session.session_id,
         );

@@ -118,8 +118,59 @@ impl AppConfig {
         Self::get_config_dir().join("config.json")
     }
 
-    pub fn find_proxy_by_id(&self, name: &String) -> Option<AIProxyConfig> {
+    pub fn find_proxy_by_id(&self, name: &str) -> Option<AIProxyConfig> {
         self.ai_proxies.get(name).cloned()
+    }
+
+    /// Find the currently active proxy configuration
+    pub fn get_current_proxy(&self) -> Option<AIProxyConfig> {
+        self.current_proxy
+            .as_ref()
+            .and_then(|name| self.find_proxy_by_id(name))
+    }
+
+    /// Set the currently active proxy
+    pub fn set_current_proxy(&mut self, name: Option<String>) -> Result<(), CrustyError> {
+        if let Some(ref proxy_name) = name {
+            if !self.ai_proxies.contains_key(proxy_name) {
+                return Err(CrustyError::ConfigError(format!(
+                    "Proxy '{}' not found",
+                    proxy_name
+                )));
+            }
+        }
+
+        self.current_proxy = name;
+        Ok(())
+    }
+
+    /// Add a new proxy configuration
+    pub fn add_proxy(&mut self, name: String, config: AIProxyConfig) -> Result<(), CrustyError> {
+        self.ai_proxies.insert(name, config);
+
+        if self.current_proxy.is_none() && !self.ai_proxies.is_empty() {
+            self.current_proxy = self.ai_proxies.keys().next().cloned();
+        }
+
+        Ok(())
+    }
+
+    /// Remove a proxy configuration
+    pub fn remove_proxy(&mut self, name: &str) -> Result<(), CrustyError> {
+        self.ai_proxies.remove(name);
+
+        if let Some(ref current) = self.current_proxy {
+            if current == name {
+                self.current_proxy = self.ai_proxies.keys().next().cloned();
+            }
+        }
+
+        Ok(())
+    }
+
+    /// List all proxy names
+    pub fn list_proxies(&self) -> Vec<String> {
+        self.ai_proxies.keys().cloned().collect()
     }
 
     /// Find a provider configuration by name

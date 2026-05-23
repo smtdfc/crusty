@@ -4,6 +4,7 @@ pub mod mode;
 pub mod plugin;
 pub mod provider;
 pub mod proxy;
+pub mod store;
 pub mod setup;
 pub mod start;
 pub mod utils;

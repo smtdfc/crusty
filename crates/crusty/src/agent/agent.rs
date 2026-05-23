@@ -2,6 +2,9 @@ use crate::agent::memory::session::Session;
 use crate::agent::message::ChatMessage;
 use crate::agent::message::TextMessage;
 use crate::agent::prompt::SYSTEM_PROMPT;
+use crate::agent::tools::calculator::CalculateExpression;
+use crate::agent::tools::datetime::GetCurrentDatetime;
+use crate::agent::tools::runtime::GetRuntimeInfo;
 use crate::agent::tools::weather::GetWeather;
 use crate::config::provider::ProviderConfig;
 use crate::exceptions::crusty::CrustyError;
@@ -10,11 +13,11 @@ use rig_core::agent::Agent;
 use rig_core::agent::MultiTurnStreamItem;
 use rig_core::client::CompletionClient;
 use rig_core::completion::CompletionModel;
+
 use rig_core::message::Message;
 use rig_core::providers::openai;
 use rig_core::streaming::StreamedAssistantContent;
 use rig_core::streaming::StreamingChat;
-
 use tracing::info;
 pub struct ChatAgent<T: CompletionModel> {
     agent: Agent<T>,
@@ -60,7 +63,11 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
         let history_data = history_lock.clone();
         drop(history_lock);
 
-        let mut stream = self.agent.stream_chat(prompt, history_data).await;
+        let mut stream = self
+            .agent
+            .stream_chat(prompt, history_data)
+            .multi_turn(5)
+            .await;
         let mut full_response = String::new();
 
         while let Some(chunk) = stream.next().await {
@@ -95,6 +102,10 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                     _ => {}
                 },
 
+                MultiTurnStreamItem::StreamUserItem(_) => {}
+
+                MultiTurnStreamItem::FinalResponse(_) => {}
+
                 _ => {}
             }
         }
@@ -118,6 +129,10 @@ pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAg
         .agent(model)
         .preamble(SYSTEM_PROMPT)
         .tool(GetWeather)
+        .tool(GetCurrentDatetime)
+        .tool(CalculateExpression)
+        .tool(GetRuntimeInfo)
+        .default_max_turns(5)
         .build();
 
     info!(
@@ -151,6 +166,9 @@ pub fn create_chat_agent_from_provider(
         .agent(model)
         .preamble(SYSTEM_PROMPT)
         .tool(GetWeather)
+        .tool(GetCurrentDatetime)
+        .tool(CalculateExpression)
+        .tool(GetRuntimeInfo)
         .build();
 
     info!(

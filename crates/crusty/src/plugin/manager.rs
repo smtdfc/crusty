@@ -10,13 +10,17 @@ use crusty_plugin::bridge::{ChatCallback, PluginRef};
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
+use crate::config::config::{GLOBAL_CONFIG, RunMode};
 use crate::{
     agent::{
-        agent::{AnyAgent, create_chat_agent},
+        agent::{AnyAgent, create_chat_agent, create_chat_agent_from_provider},
         memory::session::{Session, create_session},
         message::ChatMessage,
     },
-    cli::utils::{get_active_proxy_and_check, get_agent_params, get_initialized_store},
+    cli::utils::{
+        get_active_provider_and_check, get_active_proxy_and_check, get_agent_params,
+        get_initialized_store,
+    },
     config::plugin::PluginConfig,
     helpers::types::{ArcMutex, LazyCacheLock, LazyRwLock},
     plugin::loader::load_plugin,
@@ -92,27 +96,78 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
 
     if let Some(rt) = HOST_RUNTIME.get() {
         rt.spawn(async move {
-            let (proxy_config, model_name, api_key) = {
-                let Some((_current_proxy, proxy_config, _proxy)) =
-                    get_active_proxy_and_check("start", false)
-                else {
-                    error!("Failed to get active proxy for plugin chat");
-                    return;
-                };
-
-                let Some((model_name, api_key)) = get_agent_params(&proxy_config) else {
-                    error!("Failed to get agent parameters for plugin chat");
-                    return;
-                };
-                (proxy_config, model_name, api_key)
+            // Determine current running mode from global config
+            let current_mode = {
+                let cfg = GLOBAL_CONFIG.read().unwrap();
+                match cfg.get_mode() {
+                    Ok(m) => m,
+                    Err(_) => {
+                        error!("No mode selected for plugin chat");
+                        return;
+                    }
+                }
             };
 
-            let agent_arc = AGENT_SESSIONS
-                .get_with(s_id.clone(), async move {
-                    let agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
-                    Arc::new(Mutex::new(agent)) as ArcMutex<Box<dyn AnyAgent>>
-                })
-                .await;
+            println!("{}", current_mode);
+
+            // Create or retrieve agent depending on mode
+            let agent_arc = match current_mode {
+                RunMode::Proxy => {
+                    let (proxy_config, model_name, api_key) = {
+                        let Some((_current_proxy, proxy_config, _proxy)) =
+                            get_active_proxy_and_check("start", false)
+                        else {
+                            error!("Failed to get active proxy for plugin chat");
+                            return;
+                        };
+
+                        let Some((model_name, api_key)) = get_agent_params(&proxy_config) else {
+                            error!("Failed to get agent parameters for plugin chat");
+                            return;
+                        };
+                        (proxy_config, model_name, api_key)
+                    };
+
+                    AGENT_SESSIONS
+                        .get_with(s_id.clone(), async move {
+                            let agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
+                            Arc::new(Mutex::new(agent)) as ArcMutex<Box<dyn AnyAgent>>
+                        })
+                        .await
+                }
+                RunMode::Provider => {
+                    // Provider mode: create agent from active provider
+                    let Some((provider_name, provider_config)) = get_active_provider_and_check()
+                    else {
+                        error!("Failed to get active provider for plugin chat");
+                        return;
+                    };
+
+                    let model_name = provider_config
+                        .default_model
+                        .clone()
+                        .unwrap_or_else(|| "gpt-3.5-turbo".to_string());
+
+                    // Try to create a provider-backed agent; abort on error
+                    let agent_box =
+                        match create_chat_agent_from_provider(&provider_config, &model_name) {
+                            Ok(a) => a,
+                            Err(e) => {
+                                error!(
+                                    "Failed to create provider-based agent for plugin chat: {}",
+                                    e
+                                );
+                                return;
+                            }
+                        };
+
+                    AGENT_SESSIONS
+                        .get_with(s_id.clone(), async move {
+                            Arc::new(Mutex::new(agent_box)) as ArcMutex<Box<dyn AnyAgent>>
+                        })
+                        .await
+                }
+            };
 
             let Some(memory_store) = get_initialized_store().await else {
                 error!("Failed to initialize store for plugin chat");

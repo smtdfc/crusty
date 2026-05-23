@@ -1,27 +1,71 @@
-use reqwest::blocking::Client;
+use reqwest::Client;
 use rig_core::tool::ToolError;
 use rig_derive::rig_tool;
 use serde::Deserialize;
 use tracing::info;
 
-// 1. Định nghĩa Struct khớp với cái JSON "khủng bố" kia
 #[derive(Deserialize)]
 struct WttrResponse {
     current_condition: Vec<CurrentCondition>,
     nearest_area: Vec<NearestArea>,
+    #[serde(default)]
+    request: Vec<RequestInfo>,
+    #[serde(default)]
+    weather: Vec<WeatherDay>,
 }
 
 #[derive(Deserialize)]
 struct CurrentCondition {
-    temp_C: String,
-    feelsLikeC: String,
+    #[serde(rename = "temp_C")]
+    temp_c: String,
+    #[serde(rename = "FeelsLikeC", alias = "feelsLikeC", default)]
+    feels_like_c: Option<String>,
     humidity: String,
-    weatherDesc: Vec<ValueWrapper>,
+    #[serde(rename = "weatherDesc")]
+    weather_desc: Vec<ValueWrapper>,
 }
 
 #[derive(Deserialize)]
 struct NearestArea {
-    areaName: Vec<ValueWrapper>,
+    #[serde(rename = "areaName")]
+    area_name: Vec<ValueWrapper>,
+    #[serde(default)]
+    country: Vec<ValueWrapper>,
+    #[serde(default)]
+    region: Vec<ValueWrapper>,
+    #[serde(default)]
+    weather_url: Vec<ValueWrapper>,
+}
+
+#[derive(Deserialize)]
+struct RequestInfo {
+    query: String,
+    #[serde(rename = "type")]
+    request_type: String,
+}
+
+#[derive(Deserialize)]
+struct WeatherDay {
+    date: String,
+    #[serde(rename = "avgtempC")]
+    avg_temp_c: String,
+    #[serde(rename = "maxtempC")]
+    max_temp_c: String,
+    #[serde(rename = "mintempC")]
+    min_temp_c: String,
+    #[serde(default)]
+    hourly: Vec<HourlyForecast>,
+}
+
+#[derive(Deserialize)]
+struct HourlyForecast {
+    #[serde(rename = "tempC")]
+    temp_c: String,
+    #[serde(rename = "FeelsLikeC", alias = "feelsLikeC", default)]
+    feels_like_c: Option<String>,
+    humidity: String,
+    #[serde(rename = "weatherDesc")]
+    weather_desc: Vec<ValueWrapper>,
 }
 
 #[derive(Deserialize)]
@@ -33,17 +77,19 @@ struct ValueWrapper {
     description = "Get current weather for a specific location using wttr.in",
     required(location)
 )]
-pub fn get_weather(location: String) -> Result<String, ToolError> {
+pub async fn get_weather(location: String) -> Result<String, ToolError> {
     let client = Client::new();
     let url = format!("https://wttr.in/{}?format=j1", location);
     info!("Tool call");
     let resp = client
         .get(url)
         .send()
+        .await
         .map_err(|e| ToolError::ToolCallError(format!("Network error: {e}").into()))?;
 
     let data: WttrResponse = resp
         .json()
+        .await
         .map_err(|e| ToolError::ToolCallError(format!("JSON parse error: {e}").into()))?;
 
     let condition = data
@@ -55,7 +101,7 @@ pub fn get_weather(location: String) -> Result<String, ToolError> {
         .nearest_area
         .get(0)
         .map(|a| {
-            a.areaName
+            a.area_name
                 .get(0)
                 .map(|v| v.value.as_str())
                 .unwrap_or("Unknown")
@@ -63,14 +109,18 @@ pub fn get_weather(location: String) -> Result<String, ToolError> {
         .unwrap_or("Unknown");
 
     let desc = condition
-        .weatherDesc
+        .weather_desc
         .get(0)
         .map(|v| v.value.as_str())
         .unwrap_or("No description");
 
     let out = format!(
-        "Địa điểm: {}\nNhiệt độ: {}°C (Cảm giác như: {}°C)\nĐộ ẩm: {}%\nTrạng thái: {}",
-        area, condition.temp_C, condition.feelsLikeC, condition.humidity, desc
+        "Location: {} Temperature: {}°C (Feels like: {}°C) Humidity: {}% State: {}",
+        area,
+        condition.temp_c,
+        condition.feels_like_c.as_deref().unwrap_or("Unknown"),
+        condition.humidity,
+        desc
     );
 
     Ok(out)
