@@ -2,5 +2,10 @@
   "dependencies": {
     "9router": "^0.4.46",
     "omniroute": "^3.8.2"
+  },
+  "overrides": {
+    "dompurify": "3.4.8",
+    "glib": "0.20.0",
+    "postcss": "8.5.10"
   }
 }
