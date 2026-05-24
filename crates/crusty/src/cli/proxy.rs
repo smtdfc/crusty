@@ -47,17 +47,21 @@ fn prompt_9router_proxy_config(
             .unwrap_or_default()
     };
 
-    let port_default = existing
-        .map(|proxy| proxy.port.to_string())
-        .unwrap_or_else(|| String::from("8000"));
-    let port_input: String = Input::with_theme(&theme)
-        .with_prompt("Proxy port")
-        .with_initial_text(port_default)
-        .interact_text()
-        .unwrap_or_default();
-    let port = port_input.trim().parse::<u64>().map_err(|e| {
-        CrustyError::ConfigError(format!("Invalid proxy port '{}': {}", port_input, e))
-    })?;
+    let port = if is_local {
+        let port_default = existing
+            .map(|proxy| proxy.port.to_string())
+            .unwrap_or_else(|| String::from("8000"));
+        let port_input: String = Input::with_theme(&theme)
+            .with_prompt("Proxy port")
+            .with_initial_text(port_default)
+            .interact_text()
+            .unwrap_or_default();
+        port_input.trim().parse::<u64>().map_err(|e| {
+            CrustyError::ConfigError(format!("Invalid proxy port '{}': {}", port_input, e))
+        })?
+    } else {
+        existing.map(|proxy| proxy.port).unwrap_or(8000)
+    };
 
     let api_key_default = existing
         .and_then(|proxy| proxy.api_key.clone())

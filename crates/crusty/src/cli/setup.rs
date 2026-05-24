@@ -4,7 +4,7 @@ use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 use tracing::{error, info};
 
 use crate::{
-    ai_proxy::{_9router::_9RouterAIProxy, ai_proxy::AIProxy},
+    ai_proxy::ai_proxy::{AIProxy, get_proxy},
     config::{
         ai_proxy::AIProxyConfig,
         config::{AppConfig, RunMode},
@@ -17,8 +17,7 @@ use crate::{
 
 fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
     let theme = ColorfulTheme::default();
-    let port: u64;
-    let mut host = format!("localhost");
+    let mut host = String::from("localhost");
     let is_local: bool = Confirm::with_theme(&theme)
         .with_prompt("Use 9router locally?")
         .default(true)
@@ -32,16 +31,31 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
             .unwrap();
     }
 
-    port = Input::with_theme(&theme)
-        .with_prompt("What is 9router port ?")
-        .interact_text()
-        .unwrap();
+    let port = if is_local {
+        Input::with_theme(&theme)
+            .with_prompt("What is 9router port ?")
+            .interact_text()
+            .unwrap()
+    } else {
+        8000
+    };
 
-    let proxy = _9RouterAIProxy {
+    let config = AIProxyConfig {
+        platform: String::from("9router"),
+        is_local,
         host,
         port,
-        is_local,
+        api_key: None,
+        current_model: Some(String::from("crusty_combo")),
     };
+
+    let Some(proxy) = get_proxy("9router", &config) else {
+        return Err(CrustyError::ConfigError(format!(
+            "Unsupported proxy platform: {}",
+            "9router"
+        )));
+    };
+
     match proxy.is_install() {
         Ok(false) => {
             print_info("Installing 9router ...");
@@ -60,21 +74,83 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
 
     print_info(&format!(
         "Please follow the steps below to complete the setup:
-            if your proxy run locally, please run crusty proxy start to start the proxy.
-            Open: http://{}:{}/dashboard/combos in your browser (Log in if prompted)
+            If your proxy runs locally, please run crusty proxy start to start the proxy.
+            Open: {}{} in your browser (Log in if prompted)
             Add a combo box named crusty_combo so that crusty can function.
         ",
-        &proxy.host, &proxy.port
+        proxy.get_dashboard_url(),
+        "/combos"
     ));
 
-    Ok(AIProxyConfig {
-        platform: format!("9router"),
+    Ok(config)
+}
+
+fn setup_omniroute() -> Result<AIProxyConfig, CrustyError> {
+    let theme = ColorfulTheme::default();
+    let mut host = String::from("localhost");
+    let is_local: bool = Confirm::with_theme(&theme)
+        .with_prompt("Use OmniRoute locally?")
+        .default(true)
+        .interact()
+        .unwrap();
+
+    if !is_local {
+        host = Input::with_theme(&theme)
+            .with_prompt("What is OmniRoute host ?")
+            .interact_text()
+            .unwrap();
+    }
+
+    let port = if is_local {
+        Input::with_theme(&theme)
+            .with_prompt("What is OmniRoute port ?")
+            .interact_text()
+            .unwrap()
+    } else {
+        8000
+    };
+
+    let config = AIProxyConfig {
+        platform: String::from("omniroute"),
         is_local,
-        host: proxy.host,
+        host,
         port,
         api_key: None,
-        current_model: Some(format!("crusty_combo")),
-    })
+        current_model: Some(String::from("crusty_combo")),
+    };
+
+    let Some(proxy) = get_proxy("omniroute", &config) else {
+        return Err(CrustyError::ConfigError(String::from(
+            "Unsupported proxy platform: OmniRoute",
+        )));
+    };
+
+    match proxy.is_install() {
+        Ok(false) => {
+            print_info("Installing OmniRoute ...");
+            proxy.install()?;
+        }
+
+        Err(e) => {
+            error!(?e, "Check install failed");
+            return Err(e.into());
+        }
+
+        Ok(_) => {
+            info!("Proxy already installed, skipping...");
+        }
+    }
+
+    print_info(&format!(
+        "Please follow the steps below to complete the setup:
+            If your proxy runs locally, please run crusty proxy start to start the proxy.
+            Open: {} in your browser (Log in if prompted)
+            Add a combo box named crusty_combo so that crusty can function.
+        ",
+        proxy.get_dashboard_url()
+    ));
+
+    Ok(config)
 }
 
 fn setup_provider() -> Result<(String, ProviderConfig), CrustyError> {
@@ -182,7 +258,7 @@ pub fn handle_setup() {
             }
         }
     } else {
-        let Some(select) = show_menu(vec!["9router"], "Select proxy platform") else {
+        let Some(select) = show_menu(vec!["9router", "omniroute"], "Select proxy platform") else {
             return;
         };
 
@@ -201,6 +277,19 @@ pub fn handle_setup() {
                 Err(e) => {
                     error!(error = ?e, "Failed to setup 9router status");
                     print_error(&format!("Failed to setup 9router. Please try again"));
+                    return;
+                }
+            };
+        } else if select == 1 {
+            match setup_omniroute() {
+                Ok(c) => {
+                    config.ai_proxies.insert(name.clone(), c);
+                    config.current_proxy = Some(name);
+                }
+
+                Err(e) => {
+                    error!(error = ?e, "Failed to setup omniroute status");
+                    print_error(&format!("Failed to setup omniroute. Please try again"));
                     return;
                 }
             };

@@ -282,7 +282,7 @@ pub static GLOBAL_CONFIG: LazyLock<RwLock<AppConfig>> = LazyLock::new(|| {
         Ok(cfg) => cfg,
         Err(e) => {
             error!(error = ?e, "Failed to load config");
-            print_error(&format!("Failed to load config"));
+            print_error(&format!("Failed to load config: {}", e));
             panic!("");
         }
     };

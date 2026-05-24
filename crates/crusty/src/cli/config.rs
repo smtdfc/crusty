@@ -1,6 +1,7 @@
 use crate::{
     cli::{
         mode::{handle_mode_show, handle_mode_switch},
+        plugin::{handle_plugin_install, handle_plugin_list, handle_plugin_remove},
         provider::{
             handle_provider_add, handle_provider_list, handle_provider_remove,
             handle_provider_switch,
@@ -32,6 +33,7 @@ fn handle_config_menu() -> bool {
         vec![
             "Mode settings",
             "Provider settings",
+            "Plugin settings",
             "Proxy settings",
             "Store settings",
             "Setup wizard",
@@ -45,9 +47,10 @@ fn handle_config_menu() -> bool {
     match choice {
         0 => handle_mode_settings_menu(),
         1 => handle_provider_settings_menu(),
-        2 => handle_proxy_settings_menu(),
-        3 => handle_store_settings_menu(),
-        4 => handle_setup(),
+        2 => handle_plugin_settings_menu(),
+        3 => handle_proxy_settings_menu(),
+        4 => handle_store_settings_menu(),
+        5 => handle_setup(),
         _ => return false,
     }
 
@@ -118,6 +121,38 @@ fn handle_proxy_settings_menu() {
         7 => handle_proxy_dashboard(),
         _ => {}
     }
+}
+
+fn handle_plugin_settings_menu() {
+    let Some(action) = show_menu(
+        vec!["List plugins", "Install plugin", "Remove plugin", "Back"],
+        "Plugin settings",
+    ) else {
+        return;
+    };
+
+    match action {
+        0 => handle_plugin_list(),
+        1 => handle_plugin_install_prompt(),
+        2 => handle_plugin_remove(),
+        _ => {}
+    }
+}
+
+fn handle_plugin_install_prompt() {
+    let Some(path) = dialoguer::Input::<String>::new()
+        .with_prompt("Plugin path")
+        .interact_text()
+        .ok()
+    else {
+        return;
+    };
+
+    if path.trim().is_empty() {
+        return;
+    }
+
+    handle_plugin_install(path.trim());
 }
 
 fn handle_store_settings_menu() {
