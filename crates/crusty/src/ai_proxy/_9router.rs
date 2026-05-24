@@ -1,5 +1,5 @@
 use std::{
-    net::{SocketAddr, TcpStream},
+    net::{SocketAddr, TcpStream, ToSocketAddrs},
     thread,
     time::{Duration, Instant},
 };
@@ -16,18 +16,27 @@ use crate::{
 };
 
 pub struct _9RouterAIProxy {
+    pub is_local: bool,
     pub host: String,
     pub port: u64,
-    pub is_local: bool,
 }
 
 impl AIProxy for _9RouterAIProxy {
     fn is_install(&self) -> Result<bool, CrustyError> {
         check_npm_package("9router")
     }
-
     fn is_running(&self) -> Result<bool, CrustyError> {
-        let addr: SocketAddr = format!("127.0.0.1:{}", self.port).parse().unwrap();
+        let addr_str = if self.is_local {
+            format!("{}:{}", self.host, self.port)
+        } else {
+            self.host.replace("http://", "").replace("https://", "")
+        };
+
+        let addr = addr_str
+            .to_socket_addrs()
+            .map_err(|e| CrustyError::AIProxyError(format!("{}", e)))?
+            .next()
+            .ok_or_else(|| CrustyError::AIProxyError(format!("Cannot resolve proxy address.")))?;
 
         match TcpStream::connect_timeout(&addr, Duration::from_millis(500)) {
             Ok(_) => Ok(true),
@@ -36,7 +45,13 @@ impl AIProxy for _9RouterAIProxy {
     }
 
     fn get_url(&self) -> String {
-        format!("http://{}:{}", self.host, self.port)
+        let addr: String = if self.is_local {
+            format!("{}:{}", self.host, self.port)
+        } else {
+            format!("{}", self.host)
+        };
+
+        format!("{}/v1", addr)
     }
 
     fn start(&self) -> Result<(), CrustyError> {
@@ -83,8 +98,13 @@ impl AIProxy for _9RouterAIProxy {
         install_npm_package("9router", true)?;
         Ok(())
     }
-
     fn get_dashboard_url(&self) -> String {
-        format!("http://{}:{}/dashboard", self.host, self.port)
+        let addr: String = if self.is_local {
+            format!("{}:{}", self.host, self.port)
+        } else {
+            format!("{}", self.host)
+        };
+
+        format!("{}/dashboard", addr)
     }
 }

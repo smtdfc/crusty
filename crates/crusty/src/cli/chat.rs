@@ -69,7 +69,7 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
         RunMode::Proxy => {
             // Must use proxy in proxy mode
             match get_active_proxy_and_check("chat", false) {
-                Some((_current_proxy, proxy_config, _proxy)) => {
+                Some((_current_proxy, proxy_config, proxy)) => {
                     match get_agent_params(&proxy_config) {
                         Some((model_name, api_key)) => {
                             let model_name_clone = model_name.clone();
@@ -78,7 +78,7 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
                                 None,
                                 model_name,
                                 Ok(create_chat_agent(
-                                    proxy_config.port,
+                                    &proxy.get_url(),
                                     &api_key,
                                     &model_name_clone,
                                 )),
