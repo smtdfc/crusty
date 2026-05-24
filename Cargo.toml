@@ -7,6 +7,7 @@ members = [
     "crates/crusty",
     "crates/crusty_plugin_example",
     "crates/crusty_plugin_telegram",
+    "crusty-desktop/src-tauri"
 ]
 
 [workspace.lints.rust]
