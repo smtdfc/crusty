@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "9router": "^0.4.46"
+    "9router": "^0.4.46",
+    "omniroute": "^3.8.2"
   }
 }
