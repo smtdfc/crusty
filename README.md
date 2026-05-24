@@ -1,90 +1,114 @@
 # Crusty Agent
 
-Crusty is an AI Agent built with Rust that integrates the AI proxy.
+Crusty is a lightweight AI agent written in Rust that can run through an AI proxy/router or connect directly to an OpenAI‑compatible provider. It provides a simple CLI to configure, start/stop proxies, manage providers, and run chat sessions.
 
-## Support AI Proxy
+### Key features
 
-- [9router](https://github.com/decolua/9router).
+- Two run modes: **Proxy mode** (use a local/remote proxy/router) and **Provider mode** (use an OpenAI‑compatible provider).
+- Manage multiple proxies and providers, start/stop proxy processes, and open proxy dashboards from the CLI.
+- Automatic installation of proxy packages (via npm) when required.
 
-## System Requirements
+### Supported proxies/routers
 
-- **Rust & Cargo** (edition 2024) - [Rust Installation Guide](https://www.rust-lang.org/tools/install)
-- **Node.js & npm** - Required for Crusty Agent to automatically install and run some tool
+- 9router — https://github.com/decolua/9router
+- OmniRoute — https://github.com/diegosouzapw/OmniRoute
 
-## Installation & Build
+### System requirements
+
+- Rust & Cargo (edition 2024) — https://www.rust-lang.org/tools/install
+- Node.js & npm — required for installing and running proxy packages
+
+### Installation & build
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/smtdfc/crusty
-   cd crusty
-   ```
+
+```bash
+git clone https://github.com/smtdfc/crusty
+cd crusty
+```
+
 2. Build the application:
-   ```bash
-   cargo build --release
-   ```
-   The executable file will be located at `target/release/crusty`.
-
-## Usage Instructions
-
-### 1. Initial Setup (`setup`)
-
-Before chatting, you need to set up the basic configuration. Run the command:
 
 ```bash
-cargo run -- setup
-# Or: crusty setup
+cargo build
+cargo build --release
 ```
 
-### 2. Start proxy
+The release executable will be available at `target/release/crusty`.
+
+### Quick start
+
+1. Run the setup wizard to configure a provider or proxy:
 
 ```bash
-cargo run -- proxy start
-# Or: crusty proxy start
+crusty setup
 ```
 
-### 3. Start Chatting
-
-After the setup is complete, you can start the agent using the command:
+2. If you chose Proxy mode, configure and optionally start the proxy (local):
 
 ```bash
-cargo run -- start
-# Or: crusty start
+crusty proxy start
 ```
 
-To jump directly into chat mode and skip the menu:
+3. Start the chat session:
 
 ```bash
-cargo run -- start --chat
-# Or: crusty start --chat
+crusty start
+# or: crusty start --chat   # jump directly into chat mode
 ```
 
-**This command will:**
+### Modes
 
-- Display a welcome screen and open the chat interface.
-- Allow you to type your message and press Enter to chat with the AI.
+#### Provider mode
 
-### 7. Proxy dashboard
+Provider mode allows Crusty to use a direct OpenAI‑compatible provider (OpenAI, Anthropic, or a custom provider). Add providers via the setup wizard or using the provider CLI commands. When Provider mode is active, `crusty start` will use the configured provider and model.
+
+**Provider commands:**
 
 ```bash
-cargo run -- proxy dashboard
-# Or: crusty proxy dashboard
+crusty provider add
+crusty provider list
+crusty provider remove <name>
+crusty provider switch <name>
 ```
 
-## 🤝 How to Contribute
+#### Proxy mode
 
-Contributions are always welcome! Here are some ways you can contribute to the project:
+Proxy mode uses a proxy/router (local or remote) as the API endpoint for the agent. Proxy setup may ask for platform‑specific details (host, port, API key, model name).
 
-1. **Report bugs:** If you find a bug, please create an issue on GitHub describing the problem.
-2. **Suggest features:** If you have an idea for a new feature, feel free to open an issue or start a discussion.
-3. **Submit Pull Requests:**
-   - Fork the repository.
-   - Create a new branch for your feature or bug fix (`git checkout -b feature/your-feature-name`).
-   - Commit your changes (`git commit -m 'Add some feature'`).
-   - Push to the branch (`git push origin feature/your-feature-name`).
-   - Open a Pull Request.
+**Proxy commands:**
 
-Please ensure your code passes all checks and follows the existing style before submitting a PR.
+```bash
+crusty setup             # run setup and add a proxy
+crusty proxy start       # start the active local proxy
+crusty proxy stop        # stop the active local proxy
+crusty proxy dashboard   # open the proxy dashboard in the browser
+crusty proxy list        # list configured proxies
+```
 
-## License
+### CLI reference (common commands)
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- `crusty setup` — run the interactive setup wizard
+- `crusty start [--chat]` — start the agent; `--chat` jumps directly into the chat UI
+- `crusty proxy start|stop|dashboard` — control the active proxy
+- `crusty provider add|list|remove|switch` — manage providers
+
+### Troubleshooting
+
+- If the proxy is reported offline when starting the agent, ensure the proxy process is running and the host/port are correct.
+- If npm package installation fails, verify `node` and `npm` are installed and have network access.
+
+### Contributing
+
+Contributions are welcome:
+
+1. Fork the repository
+2. Create a branch for your change: `git checkout -b feature/your-feature`
+3. Commit and push
+4. Open a Pull Request
+
+Please ensure tests/build succeed before opening a PR.
+
+### License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
