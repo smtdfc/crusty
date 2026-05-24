@@ -108,13 +108,11 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
                 }
             };
 
-            println!("{}", current_mode);
-
             // Create or retrieve agent depending on mode
             let agent_arc = match current_mode {
                 RunMode::Proxy => {
-                    let (proxy_config, model_name, api_key) = {
-                        let Some((_current_proxy, proxy_config, _proxy)) =
+                    let (proxy_config, model_name, api_key, proxy) = {
+                        let Some((_current_proxy, proxy_config, proxy)) =
                             get_active_proxy_and_check("start", false)
                         else {
                             error!("Failed to get active proxy for plugin chat");
@@ -125,12 +123,12 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
                             error!("Failed to get agent parameters for plugin chat");
                             return;
                         };
-                        (proxy_config, model_name, api_key)
+                        (proxy_config, model_name, api_key, proxy)
                     };
 
                     AGENT_SESSIONS
                         .get_with(s_id.clone(), async move {
-                            let agent = create_chat_agent(proxy_config.port, &api_key, &model_name);
+                            let agent = create_chat_agent(&proxy.get_url(), &api_key, &model_name);
                             Arc::new(Mutex::new(agent)) as ArcMutex<Box<dyn AnyAgent>>
                         })
                         .await
