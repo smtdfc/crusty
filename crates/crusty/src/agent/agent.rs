@@ -116,12 +116,12 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
     }
 }
 
-pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAgent> {
+pub fn create_chat_agent(url: &str, api_key: &str, model: &str) -> Box<dyn AnyAgent> {
     // let http_client = reqwest::Client::new();
     let client = openai::Client::builder()
         .api_key(api_key)
         // .http_client(http_client)
-        .base_url(format!("http://localhost:{}/v1", port))
+        .base_url(url)
         .build();
 
     let agent = client
@@ -136,8 +136,8 @@ pub fn create_chat_agent(port: u64, api_key: &str, model: &str) -> Box<dyn AnyAg
         .build();
 
     info!(
-        "Agent initialization successful. AI Proxy port: {}; Model: {}",
-        port, model
+        "Agent initialization successful. AI Proxy URL: {}; Model: {}",
+        url, model
     );
     Box::new(ChatAgent::new(agent))
 }
