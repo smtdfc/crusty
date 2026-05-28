@@ -87,7 +87,7 @@ fn setup_9router() -> Result<AIProxyConfig, CrustyError> {
 
 fn setup_omniroute() -> Result<AIProxyConfig, CrustyError> {
     let theme = ColorfulTheme::default();
-    let mut host = String::from("localhost");
+    let mut host = String::from("127.0.0.1");
     let is_local: bool = Confirm::with_theme(&theme)
         .with_prompt("Use OmniRoute locally?")
         .default(true)

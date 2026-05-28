@@ -129,26 +129,28 @@ pub fn get_active_provider_and_check() -> Option<ActiveProvider> {
 static STORE_CACHE: OnceCell<Option<SharedMemoryStore>> = OnceCell::const_new();
 
 pub async fn get_initialized_store() -> Option<SharedMemoryStore> {
-    let store_opt = STORE_CACHE.get_or_init(|| async {
-        let store_config = {
-            let config = GLOBAL_CONFIG.read().unwrap();
-            config.store.clone()
-        };
+    let store_opt = STORE_CACHE
+        .get_or_init(|| async {
+            let store_config = {
+                let config = GLOBAL_CONFIG.read().unwrap();
+                config.store.clone()
+            };
 
-        let Some(store_config) = store_config else {
-            print_error("Store not configured. Please setup your store.");
-            return None;
-        };
+            let Some(store_config) = store_config else {
+                print_error("Store not configured. Please setup your store.");
+                return None;
+            };
 
-        match get_store(&store_config).await {
-            Ok(s) => Some(s),
-            Err(e) => {
-                error!(error = ?e, "Failed to create store");
-                print_error(&format!("Cannot init chat session now. Cause: {}", e));
-                None
+            match get_store(&store_config).await {
+                Ok(s) => Some(s),
+                Err(e) => {
+                    error!(error = ?e, "Failed to create store");
+                    print_error(&format!("Cannot init chat session now. Cause: {}", e));
+                    None
+                }
             }
-        }
-    }).await;
+        })
+        .await;
 
     store_opt.clone()
 }
