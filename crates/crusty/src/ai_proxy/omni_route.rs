@@ -1,6 +1,6 @@
 use std::net::ToSocketAddrs;
 use std::{
-    net::{SocketAddr, TcpStream},
+    net::TcpStream,
     thread,
     time::{Duration, Instant},
 };
@@ -11,7 +11,7 @@ use crate::{
     exceptions::crusty::CrustyError,
     helpers::{
         npm::{check_npm_package, install_npm_package},
-        process::{NPX_CMD, get_pids_by_port, save_pid, spawn_process, stop_process_by_port},
+        process::{NPX_CMD, get_pids_by_port, save_pid, spawn_process},
     },
 };
 
@@ -19,6 +19,7 @@ pub struct OmniRouteAIProxy {
     pub is_local: bool,
     pub host: String,
     pub port: u64,
+    pub api_key: Option<String>,
 }
 
 impl AIProxy for OmniRouteAIProxy {
@@ -43,6 +44,10 @@ impl AIProxy for OmniRouteAIProxy {
             Ok(_) => Ok(true),
             Err(_e) => Ok(false),
         }
+    }
+
+    fn get_api_key(&self) -> String {
+        format!("{}", self.api_key.as_deref().unwrap_or(""))
     }
 
     fn get_url(&self) -> String {

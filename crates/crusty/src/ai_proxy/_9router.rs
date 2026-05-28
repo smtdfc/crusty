@@ -1,5 +1,5 @@
 use std::{
-    net::{SocketAddr, TcpStream, ToSocketAddrs},
+    net::{TcpStream, ToSocketAddrs},
     thread,
     time::{Duration, Instant},
 };
@@ -19,6 +19,7 @@ pub struct _9RouterAIProxy {
     pub is_local: bool,
     pub host: String,
     pub port: u64,
+    pub api_key: Option<String>,
 }
 
 impl AIProxy for _9RouterAIProxy {
@@ -42,6 +43,10 @@ impl AIProxy for _9RouterAIProxy {
             Ok(_) => Ok(true),
             Err(_e) => Ok(false),
         }
+    }
+
+    fn get_api_key(&self) -> String {
+        format!("{}", self.api_key.as_deref().unwrap_or(""))
     }
 
     fn get_url(&self) -> String {

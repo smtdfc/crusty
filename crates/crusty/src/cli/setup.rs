@@ -4,7 +4,7 @@ use dialoguer::{Confirm, Input, Select, theme::ColorfulTheme};
 use tracing::{error, info};
 
 use crate::{
-    ai_proxy::ai_proxy::{AIProxy, get_proxy},
+    ai_proxy::ai_proxy::get_proxy,
     config::{
         ai_proxy::AIProxyConfig,
         config::{AppConfig, RunMode},

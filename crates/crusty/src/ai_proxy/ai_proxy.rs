@@ -12,6 +12,7 @@ pub trait AIProxy: Send + Sync {
     fn stop(&self) -> Result<(), CrustyError>;
     fn get_url(&self) -> String;
     fn get_dashboard_url(&self) -> String;
+    fn get_api_key(&self) -> String;
 }
 
 pub fn get_proxy(name: &str, proxy_config: &AIProxyConfig) -> Option<Box<dyn AIProxy>> {
@@ -21,6 +22,7 @@ pub fn get_proxy(name: &str, proxy_config: &AIProxyConfig) -> Option<Box<dyn AIP
                 is_local: proxy_config.is_local,
                 host: proxy_config.host.clone(),
                 port: proxy_config.port,
+                api_key: proxy_config.api_key.clone(),
             }));
         }
 
@@ -29,6 +31,7 @@ pub fn get_proxy(name: &str, proxy_config: &AIProxyConfig) -> Option<Box<dyn AIP
                 is_local: proxy_config.is_local,
                 host: proxy_config.host.clone(),
                 port: proxy_config.port,
+                api_key: proxy_config.api_key.clone(),
             }));
         }
 

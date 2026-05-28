@@ -6,6 +6,7 @@ use crate::agent::tools::calculator::CalculateExpression;
 use crate::agent::tools::datetime::GetCurrentDatetime;
 use crate::agent::tools::runtime::GetRuntimeInfo;
 use crate::agent::tools::weather::GetWeather;
+use crate::ai_proxy::ai_proxy::AIProxy;
 use crate::config::provider::ProviderConfig;
 use crate::exceptions::crusty::CrustyError;
 use futures_util::stream::StreamExt;
@@ -18,7 +19,6 @@ use rig_core::message::Message;
 use rig_core::providers::openai;
 use rig_core::streaming::StreamedAssistantContent;
 use rig_core::streaming::StreamingChat;
-use tracing::info;
 pub struct ChatAgent<T: CompletionModel> {
     agent: Agent<T>,
 }
@@ -116,8 +116,7 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
     }
 }
 
-pub fn create_chat_agent(url: &str, api_key: &str, model: &str) -> Box<dyn AnyAgent> {
-    // let http_client = reqwest::Client::new();
+fn build_agent(url: &str, api_key: &str, model: &str) -> Box<dyn AnyAgent> {
     let client = openai::Client::builder()
         .api_key(api_key)
         // .http_client(http_client)
@@ -135,11 +134,12 @@ pub fn create_chat_agent(url: &str, api_key: &str, model: &str) -> Box<dyn AnyAg
         .default_max_turns(5)
         .build();
 
-    info!(
-        "Agent initialization successful. AI Proxy URL: {}; Model: {}",
-        url, model
-    );
     Box::new(ChatAgent::new(agent))
+}
+
+/// Create a chat agent from a AI proxy configuration
+pub fn create_chat_agent_from_proxy(proxy: Box<dyn AIProxy>, model: &str) -> Box<dyn AnyAgent> {
+    build_agent(&proxy.get_url(), &proxy.get_api_key(), model)
 }
 
 /// Create a chat agent from a provider configuration
@@ -155,25 +155,5 @@ pub fn create_chat_agent_from_provider(
     }
 
     let normalized_base_url = ProviderConfig::normalize_base_url(&provider.base_url);
-
-    let client = openai::Client::builder()
-        .api_key(&provider.api_key)
-        .base_url(normalized_base_url.clone())
-        .build()
-        .map_err(|e| CrustyError::AgentError(format!("Failed to create OpenAI client: {}", e)))?;
-
-    let agent = client
-        .agent(model)
-        .preamble(SYSTEM_PROMPT)
-        .tool(GetWeather)
-        .tool(GetCurrentDatetime)
-        .tool(CalculateExpression)
-        .tool(GetRuntimeInfo)
-        .build();
-
-    info!(
-        "Agent initialization successful. Provider: {}; Base URL: {}; Model: {}",
-        provider.provider_type, normalized_base_url, model
-    );
-    Ok(Box::new(ChatAgent::new(agent)))
+    Ok(build_agent(&normalized_base_url, &provider.api_key, model))
 }

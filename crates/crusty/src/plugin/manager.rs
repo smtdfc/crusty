@@ -10,10 +10,13 @@ use crusty_plugin::bridge::{ChatCallback, PluginRef};
 use tokio::sync::Mutex;
 use tracing::{error, info};
 
-use crate::config::config::{GLOBAL_CONFIG, RunMode};
+use crate::{
+    agent::agent::create_chat_agent_from_proxy,
+    config::config::{GLOBAL_CONFIG, RunMode},
+};
 use crate::{
     agent::{
-        agent::{AnyAgent, create_chat_agent, create_chat_agent_from_provider},
+        agent::{AnyAgent, create_chat_agent_from_provider},
         memory::session::{Session, create_session},
         message::ChatMessage,
     },
@@ -111,7 +114,7 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
             // Create or retrieve agent depending on mode
             let agent_arc = match current_mode {
                 RunMode::Proxy => {
-                    let (proxy_config, model_name, api_key, proxy) = {
+                    let (_proxy_config, model_name, _api_key, proxy) = {
                         let Some((_current_proxy, proxy_config, proxy)) =
                             get_active_proxy_and_check("start", false)
                         else {
@@ -128,14 +131,14 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
 
                     AGENT_SESSIONS
                         .get_with(s_id.clone(), async move {
-                            let agent = create_chat_agent(&proxy.get_url(), &api_key, &model_name);
+                            let agent = create_chat_agent_from_proxy(proxy, &model_name);
                             Arc::new(Mutex::new(agent)) as ArcMutex<Box<dyn AnyAgent>>
                         })
                         .await
                 }
                 RunMode::Provider => {
                     // Provider mode: create agent from active provider
-                    let Some((provider_name, provider_config)) = get_active_provider_and_check()
+                    let Some((_provider_name, provider_config)) = get_active_provider_and_check()
                     else {
                         error!("Failed to get active provider for plugin chat");
                         return;

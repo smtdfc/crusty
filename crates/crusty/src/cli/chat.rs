@@ -1,12 +1,13 @@
 use crate::{
     agent::{
-        agent::{create_chat_agent, create_chat_agent_from_provider, create_message_callback},
+        agent::{
+            create_chat_agent_from_provider, create_chat_agent_from_proxy, create_message_callback,
+        },
         memory::{session::create_session, store::SharedMemoryStore},
         message::ChatMessage,
     },
     cli::utils::{get_active_provider_and_check, get_active_proxy_and_check, get_agent_params},
     config::config::{AppConfig, RunMode},
-    config::provider::ProviderConfig,
     helpers::tui::{print_error, show_loading},
 };
 use console::{Term, style};
@@ -71,17 +72,13 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
             match get_active_proxy_and_check("chat", false) {
                 Some((_current_proxy, proxy_config, proxy)) => {
                     match get_agent_params(&proxy_config) {
-                        Some((model_name, api_key)) => {
+                        Some((model_name, _api_key)) => {
                             let model_name_clone = model_name.clone();
                             (
                                 None,
                                 None,
                                 model_name,
-                                Ok(create_chat_agent(
-                                    &proxy.get_url(),
-                                    &api_key,
-                                    &model_name_clone,
-                                )),
+                                Ok(create_chat_agent_from_proxy(proxy, &model_name_clone)),
                             )
                         }
                         None => {
