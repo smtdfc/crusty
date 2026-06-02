@@ -14,13 +14,13 @@ use rig_core::agent::Agent;
 use rig_core::agent::MultiTurnStreamItem;
 use rig_core::client::CompletionClient;
 use rig_core::completion::CompletionModel;
+use rig_core::providers::openai;
+use rig_core::streaming::StreamedAssistantContent;
+use rig_core::streaming::StreamingChat;
 use rig_core::{
     OneOrMany,
     message::{AssistantContent, Message},
 };
-use rig_core::providers::openai;
-use rig_core::streaming::StreamedAssistantContent;
-use rig_core::streaming::StreamingChat;
 pub struct ChatAgent<T: CompletionModel> {
     agent: Agent<T>,
 }
@@ -46,6 +46,7 @@ pub trait AnyAgent: Send + Sync {
         prompt: &str,
         session: &mut Session,
         mut on_message: OnMessageCallback,
+        context_name: &str,
     ) -> Result<(), CrustyError>;
 }
 
@@ -56,6 +57,7 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
         prompt: &str,
         session: &mut Session,
         mut on_message: OnMessageCallback,
+        context_name: &str,
     ) -> Result<(), CrustyError> {
         session
             .add_message("user", Message::user(prompt.to_string()))
@@ -91,7 +93,10 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                         tool_call,
                         internal_call_id: _,
                     } => {
-                        println!("Agent calling tool: {}", tool_call.function.name);
+                        println!(
+                            "[{}] Agent calling tool: {}",
+                            context_name, tool_call.function.name
+                        );
                         session
                             .add_message(
                                 "assistant",
@@ -115,12 +120,16 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                     _ => {}
                 },
 
-                MultiTurnStreamItem::StreamUserItem(rig_core::streaming::StreamedUserContent::ToolResult { tool_result, .. }) => {
+                MultiTurnStreamItem::StreamUserItem(
+                    rig_core::streaming::StreamedUserContent::ToolResult { tool_result, .. },
+                ) => {
                     session
                         .add_message(
                             "user",
                             Message::User {
-                                content: OneOrMany::one(rig_core::message::UserContent::ToolResult(tool_result.clone())),
+                                content: OneOrMany::one(
+                                    rig_core::message::UserContent::ToolResult(tool_result.clone()),
+                                ),
                             },
                         )
                         .await?;

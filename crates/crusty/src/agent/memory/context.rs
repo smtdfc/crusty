@@ -29,7 +29,7 @@ pub async fn get_context(
     {
         Ok(r) => r,
         Err(e) => {
-            println!("SQLX QUERY ERROR: {:?}", e);
+            // println!("SQLX QUERY ERROR: {:?}", e);
             return Err(CrustyError::AgentMemoryError(format!(
                 "Failed to query. Cause: {}",
                 e

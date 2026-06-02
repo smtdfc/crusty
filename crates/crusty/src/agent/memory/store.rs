@@ -33,7 +33,7 @@ pub async fn get_store(store_config: &StoreConfig) -> Result<SharedMemoryStore, 
                     name TEXT,
                     created_at INTEGER NOT NULL
                 );
-                CREATE INDEX idx_session_time ON messages(session_id, created_at);
+                CREATE INDEX IF NOT EXISTS idx_session_time ON messages(session_id, created_at);
                 ",
         )
         .execute(&pool)

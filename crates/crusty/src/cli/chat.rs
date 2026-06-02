@@ -128,6 +128,9 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
                     continue;
                 }
 
+                if prompt == "/exit" {
+                    break;
+                }
                 let pb = show_loading("Agent: Thinking ...");
                 let mut first_chunk = true;
 
@@ -147,7 +150,7 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
                 });
 
                 agent
-                    .chat(&prompt, &mut session, callback)
+                    .chat(&prompt, &mut session, callback, "cli")
                     .await
                     .unwrap_or_else(|e| {
                         let error_message = format!("{}", e);

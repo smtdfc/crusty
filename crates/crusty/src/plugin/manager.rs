@@ -200,7 +200,15 @@ extern "C" fn host_ask_handler(plugin_id: RString, session_id: RString, question
                 resp.push_str(&chunk.content);
             });
 
-            if let Err(e) = agent.chat(&q, &mut session, callback).await {
+            if let Err(e) = agent
+                .chat(
+                    &q,
+                    &mut session,
+                    callback,
+                    &format!("Plugin: {}", plugin_id),
+                )
+                .await
+            {
                 error!(error = ?e, "Failed to chat via plugin");
                 return;
             }
