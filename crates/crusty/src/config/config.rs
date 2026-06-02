@@ -211,6 +211,11 @@ impl AppConfig {
             ));
         }
         self.providers.insert(name, config);
+
+        if self.current_provider.is_none() && !self.providers.is_empty() {
+            self.current_provider = self.providers.keys().next().cloned();
+        }
+
         Ok(())
     }
 
@@ -247,17 +252,25 @@ impl AppConfig {
         // Validate that the chosen mode has necessary configuration
         match mode {
             RunMode::Proxy => {
-                if self.current_proxy.is_none() || self.ai_proxies.is_empty() {
+                if self.ai_proxies.is_empty() {
                     return Err(CrustyError::ConfigError(
                         "No proxy configured. Please run 'crusty setup' first.".into(),
                     ));
                 }
+
+                if self.current_proxy.is_none() {
+                    self.current_proxy = self.ai_proxies.keys().next().cloned();
+                }
             }
             RunMode::Provider => {
-                if self.current_provider.is_none() || self.providers.is_empty() {
+                if self.providers.is_empty() {
                     return Err(CrustyError::ConfigError(
                         "No provider configured. Please run 'crusty provider add' first.".into(),
                     ));
+                }
+
+                if self.current_provider.is_none() {
+                    self.current_provider = self.providers.keys().next().cloned();
                 }
             }
         }

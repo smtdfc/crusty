@@ -42,7 +42,6 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
             match get_active_provider_and_check() {
                 Some((provider_name, provider_config)) => {
                     let Some(raw_model) = provider_config.default_model.clone() else {
-                        error!("Provider mode selected but provider has no default model");
                         print_error(
                             "Provider mode is active but no default model is configured. Please re-run 'crusty provider add' and set a valid model.",
                         );
@@ -59,7 +58,6 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
                     )
                 }
                 None => {
-                    error!("Provider mode selected but no active provider configured");
                     print_error(
                         "Provider mode is active but no provider is configured. Please run 'crusty provider add' to add a provider.",
                     );
@@ -82,13 +80,11 @@ pub async fn handle_chat_start(memory_store: &SharedMemoryStore) {
                             )
                         }
                         None => {
-                            error!("Failed to get agent parameters");
                             return;
                         }
                     }
                 }
                 None => {
-                    error!("Proxy mode selected but no active proxy configured");
                     print_error(
                         "Proxy mode is active but no proxy is configured. Please run 'crusty setup' to configure a proxy.",
                     );

@@ -4,9 +4,8 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use tracing::{error, info};
+use tracing::{debug, info};
 
-use crate::cli::provider::ProviderCommands::Add;
 use crate::{
     ai_proxy::ai_proxy::AIProxy,
     exceptions::crusty::CrustyError,
@@ -44,7 +43,7 @@ impl AIProxy for OmniRouteAIProxy {
         match TcpStream::connect_timeout(&addr, Duration::from_secs(500)) {
             Ok(_) => Ok(true),
             Err(e) => {
-                error!("Failed to connect proxy. Cause: {}", e);
+                debug!("Failed to connect proxy. Cause: {}", e);
                 Ok(false)
             }
         }

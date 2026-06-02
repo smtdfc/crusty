@@ -1,11 +1,11 @@
+use std::fs;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
-use std::process::{Command, Stdio};
-use sysinfo::{Pid, ProcessesToUpdate, System};
-use tracing::{error, info};
-
-use std::fs;
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
+
+use sysinfo::{Pid, ProcessesToUpdate, System};
+use tracing::{debug, error};
 
 use crate::config::config::AppConfig;
 use crate::exceptions::crusty::CrustyError;
@@ -42,7 +42,7 @@ pub fn spawn_process(key: &str, program: &str, args: Vec<&str>) -> Result<u32, C
         Ok(child) => {
             let pid = child.id();
             let _ = save_pid(key, pid);
-            info!("Spawn process: {} [PID={}]", program, pid);
+            debug!("Spawn process: {} [PID={}]", program, pid);
             Ok(pid)
         }
         Err(e) => {
@@ -64,7 +64,7 @@ pub fn save_pid(key: &str, pid: u32) -> Result<(), CrustyError> {
     fs::write(path, pid.to_string()).map_err(|e| {
         return CrustyError::ProcessError(format!("Cannot save pid {}. Cause: {}", pid, e));
     })?;
-    info!("Save pid: {}", pid);
+    debug!("Save pid: {}", pid);
     Ok(())
 }
 
@@ -117,7 +117,7 @@ pub fn stop_process(key: &str) -> Result<(), CrustyError> {
 
         if let Some(p) = sys.process(Pid::from(pid as usize)) {
             let _ = p.kill();
-            info!("Stop process: PID={} ", pid);
+            debug!("Stop process: PID={} ", pid);
         }
     }
 
@@ -134,7 +134,6 @@ pub fn stop_process_by_port(port: u64) -> Result<(), CrustyError> {
     let mut pids: std::collections::HashSet<u32> = std::collections::HashSet::new();
 
     if cfg!(target_os = "windows") {
-        // -a: all, -n: numerical, -o: owner (PID)
         let output = Command::new("netstat")
             .args(&["-ano"])
             .output()
@@ -197,10 +196,7 @@ pub fn stop_process_by_port(port: u64) -> Result<(), CrustyError> {
                 })?;
         } else {
             let mut sys = System::new_all();
-            sys.refresh_processes(
-                ProcessesToUpdate::Some(&[Pid::from(pid as usize)]),
-                true, // remove_dead_processes
-            );
+            sys.refresh_processes(ProcessesToUpdate::Some(&[Pid::from(pid as usize)]), true);
 
             if let Some(proc) = sys.process(Pid::from(pid as usize)) {
                 let _ = proc.kill();
@@ -211,7 +207,7 @@ pub fn stop_process_by_port(port: u64) -> Result<(), CrustyError> {
         }
     }
 
-    info!("Stop process on port {}", port);
+    debug!("Stop process on port {}", port);
     Ok(())
 }
 

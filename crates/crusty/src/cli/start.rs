@@ -55,7 +55,6 @@ pub async fn handle_start(jump_to_chat: bool) {
                     )
                 }
                 None => {
-                    error!("Provider mode selected but no active provider configured");
                     print_error("Provider mode is active but no provider is configured. Please run 'crusty provider add' to add a provider.");
                     return;
                 }
@@ -70,13 +69,11 @@ pub async fn handle_start(jump_to_chat: bool) {
                             (None, Some((current_proxy, proxy_config)), model_name)
                         }
                         None => {
-                            error!("Failed to get agent parameters");
                             return;
                         }
                     }
                 }
                 None => {
-                    error!("Proxy mode selected but no active proxy configured");
                     print_error("Proxy mode is active but no proxy is configured. Please run 'crusty setup' to configure a proxy.");
                     return;
                 }

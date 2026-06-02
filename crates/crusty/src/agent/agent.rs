@@ -14,8 +14,10 @@ use rig_core::agent::Agent;
 use rig_core::agent::MultiTurnStreamItem;
 use rig_core::client::CompletionClient;
 use rig_core::completion::CompletionModel;
-
-use rig_core::message::Message;
+use rig_core::{
+    OneOrMany,
+    message::{AssistantContent, Message},
+};
 use rig_core::providers::openai;
 use rig_core::streaming::StreamedAssistantContent;
 use rig_core::streaming::StreamingChat;
@@ -90,6 +92,17 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                         internal_call_id: _,
                     } => {
                         println!("Agent calling tool: {}", tool_call.function.name);
+                        session
+                            .add_message(
+                                "assistant",
+                                Message::Assistant {
+                                    id: None,
+                                    content: OneOrMany::one(AssistantContent::ToolCall(
+                                        tool_call.clone(),
+                                    )),
+                                },
+                            )
+                            .await?;
                     }
 
                     StreamedAssistantContent::ToolCallDelta {
@@ -102,7 +115,16 @@ impl<T: CompletionModel + Sync + Send + 'static> AnyAgent for ChatAgent<T> {
                     _ => {}
                 },
 
-                MultiTurnStreamItem::StreamUserItem(_) => {}
+                MultiTurnStreamItem::StreamUserItem(rig_core::streaming::StreamedUserContent::ToolResult { tool_result, .. }) => {
+                    session
+                        .add_message(
+                            "user",
+                            Message::User {
+                                content: OneOrMany::one(rig_core::message::UserContent::ToolResult(tool_result.clone())),
+                            },
+                        )
+                        .await?;
+                }
 
                 MultiTurnStreamItem::FinalResponse(_) => {}
 

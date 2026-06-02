@@ -23,12 +23,18 @@ pub async fn get_store(store_config: &StoreConfig) -> Result<SharedMemoryStore, 
 
         sqlx::query(
             "CREATE TABLE IF NOT EXISTS messages (
-        id TEXT PRIMARY KEY,
-        session_id TEXT NOT NULL,
-        content TEXT NOT NULL,
-        role TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )",
+                    id TEXT PRIMARY KEY,
+                    session_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    content TEXT,
+                    tool_calls TEXT,
+                    tool_results TEXT,
+                    tool_call_id TEXT,
+                    name TEXT,
+                    created_at INTEGER NOT NULL
+                );
+                CREATE INDEX idx_session_time ON messages(session_id, created_at);
+                ",
         )
         .execute(&pool)
         .await?;

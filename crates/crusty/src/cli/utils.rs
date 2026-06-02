@@ -1,4 +1,4 @@
-use tracing::{error, info};
+use tracing::info;
 
 use crate::{
     agent::memory::store::{SharedMemoryStore, get_store},
@@ -71,8 +71,7 @@ pub fn get_active_proxy_and_check(action: &str, check_running: bool) -> Option<A
                 ));
                 return None;
             }
-            Err(e) => {
-                error!(error = ?e, "Failed to check proxy status");
+            Err(_) => {
                 print_error(&format!(
                     "Cannot check status of proxy {} (platform: {}) on port {}. Please check log for details.",
                     current_proxy, proxy_config.platform, proxy_config.port
@@ -144,7 +143,6 @@ pub async fn get_initialized_store() -> Option<SharedMemoryStore> {
             match get_store(&store_config).await {
                 Ok(s) => Some(s),
                 Err(e) => {
-                    error!(error = ?e, "Failed to create store");
                     print_error(&format!("Cannot init chat session now. Cause: {}", e));
                     None
                 }

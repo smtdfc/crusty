@@ -40,30 +40,13 @@ impl Session {
     }
 
     pub async fn add_message(&mut self, role: &str, msg: Message) -> Result<(), CrustyError> {
-        let content = match &msg {
-            Message::User { content } => content
-                .iter()
-                .map(|c| match c {
-                    UserContent::Text(t) => t.text.as_str(),
-                    _ => "",
-                })
-                .collect::<Vec<_>>()
-                .join("\n"),
-
-            Message::Assistant { content, .. } => content
-                .iter()
-                .filter_map(|c| {
-                    if let AssistantContent::Text(t) = c {
-                        Some(t.text.clone())
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("\n"),
-
-            _ => String::new(),
+        let role = match &msg {
+            Message::User { .. } => "user",
+            Message::Assistant { .. } => "assistant",
+            _ => role,
         };
+
+        let content = serde_json::to_string(&msg).unwrap_or_else(|_| String::new());
 
         save_message(&self.store.pool, self.session_id.as_str(), role, &content).await?;
         let mut history_lock = self.history.lock().await;

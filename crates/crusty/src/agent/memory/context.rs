@@ -40,11 +40,17 @@ pub async fn get_context(
     let messages: Vec<Message> = rows
         .into_iter()
         .rev()
-        .map(|row| {
-            if row.role == "user" {
-                Message::user(row.content)
+        .filter_map(|row| {
+            let content_str = row.content.unwrap_or_default();
+            println!("{}", content_str);
+            if let Ok(m) = serde_json::from_str::<rig_core::message::Message>(&content_str) {
+                Some(m)
             } else {
-                Message::assistant(row.content)
+                if row.role == "user" {
+                    Some(Message::user(content_str))
+                } else {
+                    Some(Message::assistant(content_str))
+                }
             }
         })
         .collect();
